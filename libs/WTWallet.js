@@ -38,8 +38,16 @@ var WTWallet = function(options){
       }, function(err, ks) {
         if (err)
           reject(err);
-        else
-          resolve(ks);
+        else{
+          self.keystore = ks;
+          self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {
+            if (err)
+              reject(err);
+            self.keystore.generateNewAddress(pwDerivedKey, 1);
+            self.address = '0x'+self.keystore.getAddresses()[0];
+            resolve(self.keystore);
+          });
+        }
       });
     });
   }
