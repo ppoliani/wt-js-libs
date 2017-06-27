@@ -9,7 +9,7 @@ if [ ! $trpc_running ]; then
     > /dev/null &
   trpc_pid=$!
 fi
-./node_modules/truffle/cli.js test ./test/*.js
+./node_modules/mocha/bin/mocha test ./test/WTHotel.js
 if [ ! $trpc_running ]; then
   kill -9 $trpc_pid
 fi

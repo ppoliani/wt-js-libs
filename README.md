@@ -12,7 +12,4 @@ npm install
 
 ## Test
 
-To run unit tests on the contracts:
-```sh
-npm test
-```
+To run unit tests on the contracts `npm test` with `npm run testrpc` rproccess running.
