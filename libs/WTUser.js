@@ -7,7 +7,6 @@ var WTHotelContract = require('../build/contracts/WTHotel.json');
 var WTHotelUnitTypeContract = require('../build/contracts/WTHotelUnitType.json');
 var PrivateCallContract = require('../build/contracts/PrivateCall.json');
 var LifTokenContract = require('../build/contracts/LifToken.json');
-var abiDecoder = require('abi-decoder');
 
 var WTUser = function(options){
 
@@ -18,15 +17,6 @@ var WTUser = function(options){
   this.wallet = new WTWallet(options.wallet || {});
 
   this.web3 = this.wallet.web3;
-
-  // ABI Decoder
-  this.abiDecoder = abiDecoder;
-  this.abiDecoder.addABI(PrivateCallContract.abi);
-  this.abiDecoder.addABI(LifTokenContract.abi);
-  this.abiDecoder.addABI(WTHotelContract.abi);
-  this.abiDecoder.addABI(WTIndexContract.abi);
-  this.abiDecoder.addABI(WTKeyIndexContract.abi);
-  this.abiDecoder.addABI(WTHotelUnitTypeContract.abi);
 
   this.hotels = options.hotels || {};
   this.indexAddress = options.indexAddress || '';

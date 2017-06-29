@@ -7,7 +7,6 @@ var WTHotelContract = require('../build/contracts/WTHotel.json');
 var WTHotelUnitTypeContract = require('../build/contracts/WTHotelUnitType.json');
 var PrivateCallContract = require('../build/contracts/PrivateCall.json');
 var LifTokenContract = require('../build/contracts/LifToken.json');
-var abiDecoder = require('abi-decoder');
 
 var WTHotel = function(options){
 
@@ -18,15 +17,6 @@ var WTHotel = function(options){
   this.wallet = new WTWallet(options.wallet || {});
 
   this.web3 = this.wallet.web3;
-
-  // ABI Decoder
-  this.abiDecoder = abiDecoder;
-  this.abiDecoder.addABI(PrivateCallContract.abi);
-  this.abiDecoder.addABI(LifTokenContract.abi);
-  this.abiDecoder.addABI(WTHotelContract.abi);
-  this.abiDecoder.addABI(WTIndexContract.abi);
-  this.abiDecoder.addABI(WTKeyIndexContract.abi);
-  this.abiDecoder.addABI(WTHotelUnitTypeContract.abi);
 
   this.hotels = options.hotels || {};
   this.indexAddress = options.indexAddress || '';
@@ -47,10 +37,10 @@ var WTHotel = function(options){
 
   // Update hotels information
   this.updateHotels = function(){
-    let wtHotelAddresses = this.wtIndex.getHotelsByOwner(this.wallet.address);
+    this.hotelsAddrs = this.wtIndex.getHotelsByOwner(this.wallet.address);
     this.hotels = {};
-    for (var i = 0; i < wtHotelAddresses.length; i++)
-      this.updateHotel(wtHotelAddresses[i]);
+    for (var i = 0; i < this.hotelsAddrs.length; i++)
+      this.updateHotel(this.hotelsAddrs[i]);
     return this.hotels;
   }
 
@@ -111,7 +101,7 @@ var WTHotel = function(options){
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.WTHotel.abi).at(hotelAddress);
-    let editInfoData = wtHotel.editInfo.getData(name, description, {from: self.wtIndex.address});
+    let editInfoData = wtHotel.editInfo.getData(self.web3.toHex(name), self.web3.toHex(description));
     let data = self.wtIndex.callHotel.getData(parseInt(hotelIndex), editInfoData, {from: self.wallet.address});
     let tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
@@ -126,7 +116,7 @@ var WTHotel = function(options){
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.WTHotel.abi).at(hotelAddress);
-    let data = wtHotel.editAddress.getData(lineOne, lineTwo, zipCode, country, {from: self.wtIndex.address});
+    let data = wtHotel.editAddress.getData(self.web3.toHex(lineOne), self.web3.toHex(lineTwo), self.web3.toHex(zipCode), self.web3.toHex(country));
     data = self.wtIndex.callHotel.getData(hotelIndex, data, {from: self.wallet.address});
     let tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
