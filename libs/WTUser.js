@@ -32,13 +32,11 @@ var WTUser = function(options){
   this.setIndex = function(indexAddress){
     this.indexAddress = indexAddress;
     this.wtIndex = this.web3.eth.contract(this.contracts.WTIndex.abi).at(indexAddress);
-    console.log('WtIndex set, owner:',this.wtIndex.owner())
   }
 
   // Update hotels information
   this.updateHotels = function(){
     let wtHotelAddresses = this.wtIndex.getHotels().splice(1);
-    console.log(wtHotelAddresses);
     this.hotels = {};
     for (var i = 0; i < wtHotelAddresses.length; i++)
       this.updateHotel(wtHotelAddresses[i]);
@@ -59,7 +57,6 @@ var WTUser = function(options){
           address: unitTypeAddress,
           type: this.web3.toAscii(unitTypeNames[i]).replace(/\W+/g, ""),
           index: z,
-          label : this.web3.toAscii(unitTypeNames[i]).replace(/\W+/g, "")+' - '+z,
           name: hotelUnit[0],
           description: hotelUnit[1],
           minGuests:  parseInt(hotelUnit[2]),
@@ -100,7 +97,6 @@ var WTUser = function(options){
       txs[i].hotelName = self.web3.eth.contract(self.contracts.WTHotel.abi).at(txs[i].hotelAddress).name();
       txs[i].accepted = false;
     }
-    console.log(txs);
     return txs;
   }
 
@@ -127,7 +123,6 @@ var WTUser = function(options){
   this.bookUnit = async function(password, unitAddress, index, checkIn, nights, guestData){
     var self = this;
     console.log("Booking with checkIn and nights:", checkIn, nights);
-    // TODO: update contract to accept checkIn (days since 1970-1-1) and nights
     const privateData = this.web3.toHex(JSON.stringify(guestData));
     let hotelUnitType = this.web3.eth.contract(this.contracts.WTHotelUnitType.abi).at(unitAddress);
     let data = hotelUnitType.book.getData(self.wallet.address, index, checkIn, nights);
