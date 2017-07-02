@@ -60,7 +60,6 @@ var WTWallet = function(options){
   this.getSeed = function(password){
     var self = this;
     return new Promise(function(resolve, reject){
-      console.log('Unlocking account');
       self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {
         if (err)
           reject(err);
@@ -72,7 +71,6 @@ var WTWallet = function(options){
   this.unlockAccount = function(password){
     var self = this;
     return new Promise(function(resolve, reject){
-      console.log('Unlocking account');
       self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {
         if (err)
           reject(err);
@@ -89,7 +87,6 @@ var WTWallet = function(options){
   this.signTx = function(password, rawTx){
     var self = this;
     return new Promise(function(resolve, reject){
-      console.log('Unlocking account and signing rawTx');
       self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {
         if (!self.address){
           self.keystore.generateNewAddress(pwDerivedKey, 1);
@@ -117,7 +114,6 @@ var WTWallet = function(options){
     tx.sign(privateKey);
     const serializedTx = '0x'+tx.serialize().toString('hex');
     const txHash = self.web3.eth.sendRawTransaction(serializedTx);
-    console.log('TX:', txParams, ', hash:', txHash);
     var txSent = await self.waitForTX(txHash);
     return txSent;
   }
