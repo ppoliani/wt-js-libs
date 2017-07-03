@@ -168,7 +168,7 @@ var WTHotel = function(options){
   }
 
   this.removeUnitType = async function(){
-
+    // TODO
   }
 
   this.addUnit = async function(password, hotelAddress, unitType, name, description, minGuests, maxGuests, price){
@@ -236,7 +236,15 @@ var WTHotel = function(options){
   }
 
   this.removeUnit = async function(){
+    // TODO
+  }
 
+  this.addAmenity = async function(){
+    // TODO
+  }
+
+  this.removeAmenity = async function(){
+    // TODO
   }
 
 };
