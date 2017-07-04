@@ -235,6 +235,18 @@ var WTHotel = function(options){
     return txs;
   }
 
+  this.getHotels = function(){
+    return this.hotels;
+  }
+
+  this.getHotelsAddrs = function(){
+    return this.hotelsAddrs;
+  }
+
+  this.getHotel = function(hotelAddress){
+    return this.hotels[hotelAddress];
+  }
+
   this.removeUnit = async function(){
     // TODO
   }
