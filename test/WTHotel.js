@@ -3,7 +3,14 @@
 var chai = require('chai');
 var assert = chai.assert;
 
-var WTHotelLib = require('../libs/WTHotel.js');
+var WTHotelLib;
+if (process.argv.indexOf('test-build') > 0){
+  console.log('Testing build..');
+  WTHotelLib = require('../dist/node/WTHotel.js');
+} else {
+  WTHotelLib = require('../libs/WTHotel.js');
+}
+
 var wtHotelLib = new WTHotelLib({ wallet: {web3Provider: 'http://localhost:8545'}});
 
 var web3 = wtHotelLib.web3;

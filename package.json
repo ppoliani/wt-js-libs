@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha",
+    "test-build": "./node_modules/mocha/bin/mocha test -- test-build",
     "postinstall": "scripts/install.sh",
     "testrpc": "./node_modules/ethereumjs-testrpc/bin/testrpc",
     "build": "webpack --config build.web.config.js && webpack --config build.node.config.js"
