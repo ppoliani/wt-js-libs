@@ -167,8 +167,22 @@ var WTHotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.removeUnitType = async function(){
-    // TODO
+  this.removeUnitType = async function(hotelAddress, unitTypeName){
+    var self = this;
+    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
+    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
+    let wtHotel = self.web3.eth.contract(self.contracts.WTHotel.abi).at(hotelAddress);
+    const unitTypeIndex = wtHotel.getUnitTypeNames().indexOf(web3.toHex(unitTypeName));
+
+    let data = wtHotel.removeUnitType.getData(self.web3.toHex(unitTypeName), unitTypeIndex);
+    data = self.wtIndex.callHotel.getData(hotelIndex, data);
+    let tx = await self.wallet.sendTx(password, {
+      to: self.wtIndex.address,
+      data: data,
+      gasLimit: 4700000
+    });
+
+    return await self.wallet.waitForTX(tx.transactionHash);
   }
 
   this.addUnit = async function(password, hotelAddress, unitType, name, description, minGuests, maxGuests, price){
