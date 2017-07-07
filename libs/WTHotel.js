@@ -9,6 +9,8 @@ var WTHotelUnitTypeContract = require('../build/contracts/WTHotelUnitType.json')
 var PrivateCallContract = require('../build/contracts/PrivateCall.json');
 var LifTokenContract = require('../build/contracts/LifToken.json');
 
+const util = require('ethereumjs-util');
+
 var WTHotel = function(options){
 
   // Winding Tree key for encryption
@@ -167,8 +169,23 @@ var WTHotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.removeUnitType = async function(){
+  this.removeUnitType = async function(password, hotelAddress, unitTypeName){
+    var self = this;
+    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
+    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
+    let wtHotel = self.web3.eth.contract(self.contracts.WTHotel.abi).at(hotelAddress);
+    const unitTypeHex = util.bufferToHex(util.setLengthRight(self.web3.toHex(unitTypeName), 32));
+    const unitTypeIndex = wtHotel.getUnitTypeNames().indexOf(unitTypeHex);
 
+    let data = wtHotel.removeUnitType.getData(self.web3.toHex(unitTypeName), unitTypeIndex);
+    data = self.wtIndex.callHotel.getData(hotelIndex, data);
+    const tx = await self.wallet.sendTx(password, {
+      to: self.wtIndex.address,
+      data: data,
+      gasLimit: 4700000
+    });
+
+    return await self.wallet.waitForTX(tx.transactionHash);
   }
 
   this.addUnit = async function(password, hotelAddress, unitType, name, description, minGuests, maxGuests, price){
@@ -235,8 +252,28 @@ var WTHotel = function(options){
     return txs;
   }
 
-  this.removeUnit = async function(){
+  this.getHotels = function(){
+    return this.hotels;
+  }
 
+  this.getHotelsAddrs = function(){
+    return this.hotelsAddrs;
+  }
+
+  this.getHotel = function(hotelAddress){
+    return this.hotels[hotelAddress];
+  }
+
+  this.removeUnit = async function(){
+    // TODO
+  }
+
+  this.addAmenity = async function(){
+    // TODO
+  }
+
+  this.removeAmenity = async function(){
+    // TODO
   }
 
 };

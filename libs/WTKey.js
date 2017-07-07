@@ -6,10 +6,8 @@ var WTKey = function(options){
 
   this.kbpgp = kbpgp;
   this.kbpgp.constants = kbpgp["const"].openpgp;
-  this.indexAddress = options.indexAddress || '0x0';
   this.publicKey = options.publicKey || '';
   this.privateKey = options.privateKey || '';
-  this.userId = options.userId || '';
 
   this.importPub = function(publicKey){
     this.publicKey = options.publicKey;
@@ -57,7 +55,6 @@ var WTKey = function(options){
               });
             });
             Promise.all([publicPromise, privatePromise]).then(function(keys){
-              self.userId = userid;
               self.publicKey = keys[0];
               self.privateKey = keys[1];
               resolve({ public: keys[0], private: keys[1] });
