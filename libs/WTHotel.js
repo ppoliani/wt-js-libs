@@ -9,6 +9,8 @@ var WTHotelUnitTypeContract = require('../build/contracts/WTHotelUnitType.json')
 var PrivateCallContract = require('../build/contracts/PrivateCall.json');
 var LifTokenContract = require('../build/contracts/LifToken.json');
 
+const util = require('ethereumjs-util');
+
 var WTHotel = function(options){
 
   // Winding Tree key for encryption
@@ -167,16 +169,17 @@ var WTHotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.removeUnitType = async function(hotelAddress, unitTypeName){
+  this.removeUnitType = async function(password, hotelAddress, unitTypeName){
     var self = this;
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.WTHotel.abi).at(hotelAddress);
-    const unitTypeIndex = wtHotel.getUnitTypeNames().indexOf(web3.toHex(unitTypeName));
+    const unitTypeHex = util.bufferToHex(util.setLengthRight(self.web3.toHex(unitTypeName), 32));
+    const unitTypeIndex = wtHotel.getUnitTypeNames().indexOf(unitTypeHex);
 
     let data = wtHotel.removeUnitType.getData(self.web3.toHex(unitTypeName), unitTypeIndex);
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
-    let tx = await self.wallet.sendTx(password, {
+    const tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
       data: data,
       gasLimit: 4700000
