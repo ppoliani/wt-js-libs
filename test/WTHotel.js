@@ -66,6 +66,38 @@ describe('WT Hotel Lib', function() {
     assert.equal(wtHotelLib.utils.formatLatitude(hotel.latitude), 50);
   });
 
+  it('Should create a hotel, add and remove amenities.', async function() {
+    await wtHotelLib.wallet.createWallet('password123');
+    await web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wtHotelLib.wallet.address, value: web3.toWei(5, 'ether')});
+    assert.equal(web3.eth.getBalance(wtHotelLib.wallet.address), web3.toWei(5, 'ether'));
+    wtHotelLib.setIndex(indexAddress);
+    await wtHotelLib.createHotel('password123', 'WTHotel', 'Winding Tree Hotel');
+    await wtHotelLib.updateHotels();
+    let hotel = wtHotelLib.getHotel(wtHotelLib.hotelsAddrs[0]);
+    assert.equal(hotel.name, 'WTHotel');
+    assert.equal(hotel.description, 'Winding Tree Hotel');
+    await wtHotelLib.addUnitType('password123', wtHotelLib.hotelsAddrs[0], 'BASIC');
+    await wtHotelLib.addUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 'Room1', 'Basic Room', 1, 3, '10 USD');
+    await wtHotelLib.addUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 'Room2', 'Basic Room', 1, 3, '10 USD');
+    await wtHotelLib.addUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 'Room3', 'Basic Room', 1, 3, '10 USD');
+    await wtHotelLib.addAmenity('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 1);
+    await wtHotelLib.addAmenity('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 2, 1);
+    await wtHotelLib.addAmenity('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 2, 3);
+    await wtHotelLib.addAmenity('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 2, 9);
+    await wtHotelLib.updateHotels();
+    hotel = wtHotelLib.getHotel(wtHotelLib.hotelsAddrs[0]);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units.length, 3);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units[0].amenities.length, 1);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units[1].amenities.length, 3);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units[2].amenities.length, 0);
+    await wtHotelLib.removeAmenity('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 2, 3);
+    await wtHotelLib.updateHotels();
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units.length, 3);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units[0].amenities.length, 1);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units[1].amenities.length, 2);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units[2].amenities.length, 0);
+  });
+
   it('Should create a hotel, create a unit type an upload new units and edit them.', async function() {
     await wtHotelLib.wallet.createWallet('password123');
     await web3.eth.sendTransaction({from: web3.eth.accounts[0], to: wtHotelLib.wallet.address, value: web3.toWei(5, 'ether')});
