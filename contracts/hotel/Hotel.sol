@@ -28,12 +28,18 @@ contract Hotel is Indexed, Father {
 	mapping(bytes32 => address) public unitTypes;
 	bytes32[] public unitTypeNames;
 
+<<<<<<< 47d1fd370838149601d09706710d8ef54fa1e9a4:contracts/hotel/Hotel.sol
   // Hotel images
 	string[] public images;
 
   // Constructor
 
 	function Hotel(string _name, string _description) {
+=======
+  // Constructor
+
+	function WTHotel(string _name, string _description) {
+>>>>>>> Update wt-contracts submodule and build:contracts/WTHotel.sol
 		name = _name;
 		description = _description;
 		created = block.number;
@@ -126,6 +132,7 @@ contract Hotel is Indexed, Father {
 			throw;
 	}
 
+<<<<<<< 47d1fd370838149601d09706710d8ef54fa1e9a4:contracts/hotel/Hotel.sol
   // Only child methods
 
   function callIndex(bytes data) onlyChild() {
@@ -134,6 +141,9 @@ contract Hotel is Indexed, Father {
   }
 
 	// Public methods
+=======
+	// Public constant methods
+>>>>>>> Update wt-contracts submodule and build:contracts/WTHotel.sol
 
 	function getUnitType(bytes32 unitType) constant returns (address) {
 		return unitTypes[unitType];

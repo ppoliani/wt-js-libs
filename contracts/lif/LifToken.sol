@@ -191,19 +191,25 @@ contract LifToken is LifInterface, LifDAOInterface, Ownable, PullPayment {
     }
 
     //ERC20 token transfer method
+<<<<<<< 47d1fd370838149601d09706710d8ef54fa1e9a4:contracts/lif/LifToken.sol
     function transfer(address to, uint value) returns (bool) {
+=======
+    function transfer(address to, uint value) {
+>>>>>>> Update wt-contracts submodule and build:contracts/LifToken.sol
 
       balances[msg.sender] = balances[msg.sender].sub(value);
       balances[to] = balances[to].add(value);
       issueVotes(msg.sender, to);
       Transfer(msg.sender, to, value);
 
-      return true;
-
     }
 
     //ERC20 token transfer method
+<<<<<<< 47d1fd370838149601d09706710d8ef54fa1e9a4:contracts/lif/LifToken.sol
     function transferFrom(address from, address to, uint value) returns (bool) {
+=======
+    function transferFrom(address from, address to, uint value) {
+>>>>>>> Update wt-contracts submodule and build:contracts/LifToken.sol
       if (to == address(this))
         throw;
 
@@ -214,12 +220,14 @@ contract LifToken is LifInterface, LifDAOInterface, Ownable, PullPayment {
       issueVotes(msg.sender, to);
       Transfer(from, to, value);
 
-      return true;
-
     }
 
     //ERC20 token approve method
+<<<<<<< 47d1fd370838149601d09706710d8ef54fa1e9a4:contracts/lif/LifToken.sol
     function approve(address spender, uint value) returns (bool) {
+=======
+    function approve(address spender, uint value) {
+>>>>>>> Update wt-contracts submodule and build:contracts/LifToken.sol
 
       if (spender == address(this))
         throw;
@@ -232,8 +240,6 @@ contract LifToken is LifInterface, LifDAOInterface, Ownable, PullPayment {
 
       allowed[msg.sender][spender] = value;
       Approval(msg.sender, spender, value);
-
-      return true;
 
     }
 
