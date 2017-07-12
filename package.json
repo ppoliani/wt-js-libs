@@ -12,8 +12,13 @@
     "postinstall": "scripts/install.sh",
     "testrpc": "./node_modules/ethereumjs-testrpc/bin/testrpc",
     "build": "webpack --config build.web.config.js && webpack --config build.node.config.js",
+<<<<<<< 64037779ecd5fc59bc6ac97ff04d782772442803
     "pull-submodules": "git submodule foreach git pull && npm run postinstall",
     "update-submodules": "git submodule update --recursive"
+=======
+    "update-submodules": "git submodule update --recursive && npm run postinstall",
+    "pull-submodules": "git submodule foreach git pull origin master && npm run postinstall"
+>>>>>>> Added pull-submodules script
   },
   "keywords": [
     "winding-tree",
