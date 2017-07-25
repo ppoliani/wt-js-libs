@@ -11,7 +11,8 @@
     "test-build": "./node_modules/mocha/bin/mocha test -- test-build",
     "postinstall": "scripts/install.sh",
     "testrpc": "./node_modules/ethereumjs-testrpc/bin/testrpc",
-    "build": "webpack --config build.web.config.js && webpack --config build.node.config.js"
+    "build": "webpack --config build.web.config.js && webpack --config build.node.config.js",
+    "pull-submodules": "git submodule foreach git pull && npm run postinstall"
   },
   "keywords": [
     "winding-tree",
@@ -34,7 +35,8 @@
     "eth-lightwallet": "^2.5.4",
     "ethereumjs-util": "^5.1.2",
     "kbpgp": "^2.0.72",
-    "truffle-hdwallet-provider": "0.0.3"
+    "truffle-hdwallet-provider": "0.0.3",
+    "zeppelin-solidity": "^1.2.0"
   },
   "devDependencies": {
     "ethereumjs-testrpc": "3.0.3",

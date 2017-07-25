@@ -1,9 +1,9 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.11;
 
-import "./zeppelin/ownership/Ownable.sol";
-import "./WTHotel.sol";
-import "./WTAirline.sol";
-import "./WTAirRoute.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./hotel/Hotel.sol";
+import "./airline/Airline.sol";
+import "./Father.sol";
 
 /*
  * WTIndex
@@ -11,25 +11,38 @@ import "./WTAirRoute.sol";
  * The hotels and airlines are saved in array and can be filtered by the owner
  * address.
  */
-contract WTIndex is Ownable {
+contract WTIndex is Ownable, Father {
 
-	WTHotel[] public hotels;
+	Hotel[] public hotels;
 	mapping(address => address[]) public hotelsByOwner;
 
-	WTAirline[] public airlines;
+	Airline[] public airlines;
 	mapping(address => address[]) public airlinesByOwner;
 
+  address DAO;
+
 	event log();
+
+  event voteGiven(address);
 
 	function WTIndex() {
 		hotels.length ++;
 		airlines.length ++;
 	}
 
+  // Only owner methods
+
+  function setDAO(address _DAO) onlyOwner() {
+    DAO = _DAO;
+  }
+
+  // Public external methods
+
 	function registerHotel(string name, string description) external {
-		WTHotel newHotel = new WTHotel(name, description);
+		Hotel newHotel = new Hotel(name, description);
 		hotels.push(newHotel);
 		hotelsByOwner[msg.sender].push(newHotel);
+    addChild(newHotel);
 		log();
 	}
 
@@ -41,9 +54,10 @@ contract WTIndex is Ownable {
 	}
 
 	function registerAirline(string name, string description) external {
-		WTAirline newAirline = new WTAirline(name, description);
+		Airline newAirline = new Airline(name, description);
 		airlines.push(newAirline);
 		airlinesByOwner[msg.sender].push(newAirline);
+    addChild(newAirline);
 		log();
 	}
 
@@ -54,11 +68,20 @@ contract WTIndex is Ownable {
 			log();
 	}
 
-	function getHotels() constant returns(WTHotel[]){
+  // Only childs methods
+
+  function giveVote(address userAddress) onlyChild() {
+      // TO DO
+      voteGiven(msg.sender);
+  }
+
+  // Public constant methods
+
+	function getHotels() constant returns(Hotel[]){
 		return hotels;
 	}
 
-	function getAirlines() constant returns(WTAirline[]){
+	function getAirlines() constant returns(Airline[]){
 		return airlines;
 	}
 
@@ -66,7 +89,7 @@ contract WTIndex is Ownable {
 		return hotelsByOwner[owner];
 	}
 
-	function getAirlineByOwner(address owner) constant returns(address[]){
+	function getAirlinesByOwner(address owner) constant returns(address[]){
 		return airlinesByOwner[owner];
 	}
 
