@@ -3,8 +3,8 @@ var WTKey = require('./WTKey');
 var WTWallet = require('./WTWallet');
 var WTKeyIndexContract = require('../build/contracts/WTKeyIndex.json');
 var WTIndexContract = require('../build/contracts/WTIndex.json');
-var WTHotelContract = require('../build/contracts/WTHotel.json');
-var WTHotelUnitTypeContract = require('../build/contracts/WTHotelUnitType.json');
+var HotelContract = require('../build/contracts/Hotel.json');
+var UnitTypeContract = require('../build/contracts/UnitType.json');
 var PrivateCallContract = require('../build/contracts/PrivateCall.json');
 var LifTokenContract = require('../build/contracts/LifToken.json');
 
@@ -24,9 +24,9 @@ var WTUser = function(options){
   this.contracts = {
     WTIndex: WTIndexContract,
     WTKeyIndex: WTKeyIndexContract,
-    WTHotel: WTHotelContract,
+    WTHotel: HotelContract,
     LifToken: LifTokenContract,
-    WTHotelUnitType: WTHotelUnitTypeContract
+    WTHotelUnitType: UnitTypeContract
   };
 
   this.setIndex = function(indexAddress){
