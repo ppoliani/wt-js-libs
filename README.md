@@ -3,9 +3,6 @@
 ## Install
 
 ```sh
-npm install -g grunt-cli
-npm install -g ethereumjs-testrpc
-npm install -g truffle
 git clone https://github.com/windingtree/wt-js-libs --recursive
 npm install
 ```
