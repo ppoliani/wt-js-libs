@@ -1,15 +1,9 @@
 pragma solidity ^0.4.11;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-<<<<<<< 47d1fd370838149601d09706710d8ef54fa1e9a4
 import "./hotel/Hotel.sol";
 import "./airline/Airline.sol";
 import "./Father.sol";
-=======
-import "./WTHotel.sol";
-import "./WTAirline.sol";
-import "./WTAirRoute.sol";
->>>>>>> Update wt-contracts submodule and build
 
 /*
  * WTIndex
