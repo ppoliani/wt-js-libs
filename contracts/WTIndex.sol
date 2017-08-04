@@ -2,8 +2,7 @@ pragma solidity ^0.4.11;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./hotel/Hotel.sol";
-import "./airline/Airline.sol";
-import "./Father.sol";
+import "./Parent.sol";
 
 /*
  * WTIndex
@@ -11,23 +10,19 @@ import "./Father.sol";
  * The hotels and airlines are saved in array and can be filtered by the owner
  * address.
  */
-contract WTIndex is Ownable, Father {
+contract WTIndex is Ownable, Parent {
 
-	Hotel[] public hotels;
-	mapping(address => address[]) public hotelsByOwner;
-
-	Airline[] public airlines;
-	mapping(address => address[]) public airlinesByOwner;
+  Hotel[] public hotels;
+  mapping(address => address[]) public hotelsByOwner;
 
   address DAO;
 
-	event log();
+  event log();
 
-  event voteGiven(address);
+  event voteGiven(address receiver);
 
 	function WTIndex() {
 		hotels.length ++;
-		airlines.length ++;
 	}
 
   // Only owner methods
@@ -38,31 +33,16 @@ contract WTIndex is Ownable, Father {
 
   // Public external methods
 
-	function registerHotel(string name, string description) external {
-		Hotel newHotel = new Hotel(name, description);
-		hotels.push(newHotel);
-		hotelsByOwner[msg.sender].push(newHotel);
+  function registerHotel(string name, string description) external {
+    Hotel newHotel = new Hotel(name, description);
+    hotels.push(newHotel);
+    hotelsByOwner[msg.sender].push(newHotel);
     addChild(newHotel);
 		log();
 	}
 
 	function callHotel(uint index, bytes data) external {
 		if (!hotelsByOwner[msg.sender][index].call(data))
-			throw;
-		else
-			log();
-	}
-
-	function registerAirline(string name, string description) external {
-		Airline newAirline = new Airline(name, description);
-		airlines.push(newAirline);
-		airlinesByOwner[msg.sender].push(newAirline);
-    addChild(newAirline);
-		log();
-	}
-
-	function callAirline(uint index, bytes data) external {
-		if (!airlinesByOwner[msg.sender][index].call(data))
 			throw;
 		else
 			log();
@@ -77,20 +57,12 @@ contract WTIndex is Ownable, Father {
 
   // Public constant methods
 
-	function getHotels() constant returns(Hotel[]){
-		return hotels;
-	}
-
-	function getAirlines() constant returns(Airline[]){
-		return airlines;
-	}
+  function getHotels() constant returns(Hotel[]){
+    return hotels;
+  }
 
 	function getHotelsByOwner(address owner) constant returns(address[]){
 		return hotelsByOwner[owner];
-	}
-
-	function getAirlinesByOwner(address owner) constant returns(address[]){
-		return airlinesByOwner[owner];
 	}
 
 }
