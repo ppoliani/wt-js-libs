@@ -101,6 +101,7 @@ describe('WT Hotel Lib', function() {
     await wtHotelLib.createHotel('password123', 'WTHotel', 'Winding Tree Hotel');
     await wtHotelLib.updateHotels();
     await wtHotelLib.addUnitType('password123', wtHotelLib.hotelsAddrs[0], 'BASIC');
+    await wtHotelLib.addUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC');
     await wtHotelLib.updateHotels();
     let hotel = wtHotelLib.getHotel(wtHotelLib.hotelsAddrs[0]);
     assert.equal(hotel.name, 'WTHotel');
@@ -115,11 +116,10 @@ describe('WT Hotel Lib', function() {
     assert.equal(hotel.unitTypes[0].maxGuests, 0);
     assert.equal(hotel.unitTypes[0].price, '');
     assert.equal(hotel.unitTypes[0].amenities.length, 0);
-    assert.equal(hotel.unitTypes[0].units.length, 0);
-    await wtHotelLib.addUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC');
+    assert.equal(hotel.units.length, 1);
     await wtHotelLib.editUnitType('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 'Basic Room 1', 1, 2, '12 USD');
-    await wtHotelLib.unitActive('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 1, false);
-    await wtHotelLib.setUnitPrice('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 1, '20 USD', 50, 5);
+    await wtHotelLib.setUnitActive('password123', wtHotelLib.hotelsAddrs[0], hotel.units[0].address, false);
+    await wtHotelLib.setUnitPrice('password123', wtHotelLib.hotelsAddrs[0], hotel.units[0].address, '20 USD', 50, 5);
     await wtHotelLib.updateHotels();
     hotel = wtHotelLib.getHotel(wtHotelLib.hotelsAddrs[0]);
     assert.equal(hotel.name, 'WTHotel');
@@ -134,15 +134,22 @@ describe('WT Hotel Lib', function() {
     assert.equal(hotel.unitTypes[0].maxGuests, 2);
     assert.equal(hotel.unitTypes[0].price, '12 USD');
     assert.equal(hotel.unitTypes[0].amenities.length, 0);
-    assert.equal(hotel.unitTypes[0].units.length, 1);
-    assert.equal(hotel.unitTypes[0].units[0].active, false);
-    assert.equal(wtHotelLib.getReservation(wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 49)[0], '');
-    assert.equal(wtHotelLib.getReservation(wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 50)[0], '20 USD');
-    assert.equal(wtHotelLib.getReservation(wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 51)[0], '20 USD');
-    assert.equal(wtHotelLib.getReservation(wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 52)[0], '20 USD');
-    assert.equal(wtHotelLib.getReservation(wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 53)[0], '20 USD');
-    assert.equal(wtHotelLib.getReservation(wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 54)[0], '20 USD');
-    assert.equal(wtHotelLib.getReservation(wtHotelLib.hotelsAddrs[0], 'BASIC', 1, 55)[0], '');
+    assert.equal(hotel.units.length, 1);
+    assert.equal(hotel.units[0].active, false);
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 49)[0], '');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 50)[0], '20 USD');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 51)[0], '20 USD');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 52)[0], '20 USD');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 53)[0], '20 USD');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 54)[0], '20 USD');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 55)[0], '');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 49)[1], '0x0000000000000000000000000000000000000000');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 50)[1], '0x0000000000000000000000000000000000000000');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 51)[1], '0x0000000000000000000000000000000000000000');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 52)[1], '0x0000000000000000000000000000000000000000');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 53)[1], '0x0000000000000000000000000000000000000000');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 54)[1], '0x0000000000000000000000000000000000000000');
+    assert.equal(wtHotelLib.getReservation(hotel.units[0].address, 55)[1], '0x0000000000000000000000000000000000000000');
   });
 
   it('Should create a hotel, add a unitType, add and remove units in it', async function() {
@@ -157,10 +164,10 @@ describe('WT Hotel Lib', function() {
     await wtHotelLib.addUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC');
     await wtHotelLib.addUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC');
     await wtHotelLib.updateHotels();
-    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].unitTypes[0].units.length, 3);
-    await wtHotelLib.removeUnit('password123', wtHotelLib.hotelsAddrs[0], 'BASIC', 1);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units.length, 3);
+    await wtHotelLib.removeUnit('password123', wtHotelLib.hotelsAddrs[0], wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units[1].address);
     await wtHotelLib.updateHotels();
-    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].unitTypes[0].units.length, 2);
+    assert.equal(wtHotelLib.hotels[wtHotelLib.hotelsAddrs[0]].units.length, 2);
   });
 
   it('Should create a hotel, add unitTypes and delete one of them.', async function() {
@@ -216,9 +223,7 @@ describe('WT Hotel Lib', function() {
     assert.equal(hotel.timezone, '1');
     assert.equal(wtHotelLib.utils.formatLongitude(hotel.longitude), 15);
     assert.equal(wtHotelLib.utils.formatLatitude(hotel.latitude), 50);
-    assert.equal(hotel.unitTypes[0].units.length, 5);
-    assert.equal(hotel.unitTypes[1].units.length, 3);
-    assert.equal(hotel.unitTypes[2].units.length, 1);
+    assert.equal(hotel.units.length, 9);
   });
 
 });
