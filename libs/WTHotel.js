@@ -6,6 +6,7 @@ var WTKeyIndexContract = require('../build/contracts/WTKeyIndex.json');
 var WTIndexContract = require('../build/contracts/WTIndex.json');
 var HotelContract = require('../build/contracts/Hotel.json');
 var UnitTypeContract = require('../build/contracts/UnitType.json');
+var UnitContract = require('../build/contracts/Unit.json');
 var PrivateCallContract = require('../build/contracts/PrivateCall.json');
 var LifTokenContract = require('../build/contracts/LifToken.json');
 
@@ -31,6 +32,7 @@ var Hotel = function(options){
     WTKeyIndex: WTKeyIndexContract,
     Hotel: HotelContract,
     LifToken: LifTokenContract,
+    HotelUnit: UnitContract,
     HotelUnitType: UnitTypeContract
   };
 
@@ -53,6 +55,15 @@ var Hotel = function(options){
     let wtHotel = this.web3.eth.contract(this.contracts.Hotel.abi).at(hotelAddress);
     let unitTypeNames = wtHotel.getUnitTypeNames();
     let unitTypes = [];
+    let totalUnits = wtHotel.getChildsLength();
+    let units = [];
+
+    // Hotel images
+    let hotelImages = [];
+    for (var z = 0; z < wtHotel.getImagesLength(); z++)
+      hotelImages.push(wtHotel.getImage(z));
+
+    // Unit Types
     for (var i = 1; i < unitTypeNames.length; i++) {
       if (wtHotel.getUnitType(unitTypeNames[i]) != '0x0000000000000000000000000000000000000000'){
         let hotelUnitType = this.web3.eth.contract(this.contracts.HotelUnitType.abi).at(wtHotel.getUnitType(unitTypeNames[i]));
@@ -61,12 +72,7 @@ var Hotel = function(options){
         hotelUnitType.getAmenities(z).map(function(a ,i){
           if (parseInt(a) > 0) hotelUnitAmenities.push(parseInt(a));
         });
-        let units = [];
         let images = [];
-        for (var z = 1; z <= hotelUnitType.totalUnits(); z++)
-          units.push({
-            active: hotelUnitType.getUnit(z)
-          });
         for (var z = 0; z < hotelUnitType.getImagesLength(); z++)
           images.push(hotelUnitType.getImage(z));
         unitTypes.push({
@@ -78,11 +84,24 @@ var Hotel = function(options){
           price: unitTypeInfo[3],
           active: unitTypeInfo[3],
           amenities: hotelUnitAmenities,
-          units: units,
           images: images
         });
       }
     }
+
+    // Hotel Units
+    for (var i = 1; i < totalUnits; i++) {
+      let unitAddress = wtHotel.childs.call(i);
+      if (unitAddress != '0x0000000000000000000000000000000000000000'){
+        let hotelUnit = this.web3.eth.contract(this.contracts.HotelUnit.abi).at(unitAddress);
+        units.push({
+          address: unitAddress,
+          unitType: hotelUnit.unitType(),
+          active: hotelUnit.active()
+        });
+      }
+    }
+
     this.hotels[hotelAddress] = {
       name: wtHotel.name(),
       description: wtHotel.description(),
@@ -93,7 +112,9 @@ var Hotel = function(options){
       timezone: parseInt(wtHotel.timezone()),
       latitude: parseInt(wtHotel.latitude()),
       longitude: parseInt(wtHotel.longitude()),
-      unitTypes: unitTypes
+      images: hotelImages,
+      unitTypes: unitTypes,
+      units: units
     };
     return this.hotels[hotelAddress];
   }
@@ -158,13 +179,13 @@ var Hotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.addUnitType = async function(password, hotelAddress, unitTypeName){
+  this.addUnitType = async function(password, hotelAddress, unitType){
     var self = this;
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
 
-    let data = self.web3.eth.contract(self.contracts.HotelUnitType.abi).new.getData(hotelAddress, self.web3.toHex(unitTypeName), {data: self.contracts.HotelUnitType.unlinked_binary});
+    let data = self.web3.eth.contract(self.contracts.HotelUnitType.abi).new.getData(hotelAddress, self.web3.toHex(unitType), {data: self.contracts.HotelUnitType.unlinked_binary});
     let tx = await self.wallet.sendTx(password, {
       data: data,
       gasLimit: 4700000
@@ -172,7 +193,7 @@ var Hotel = function(options){
     const createTx = await self.wallet.waitForTX(tx.transactionHash);
     let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(createTx.contractAddress);
 
-    data = wtHotel.addUnitType.getData(wtHotelUnitType.address, self.web3.toHex(unitTypeName));
+    data = wtHotel.addUnitType.getData(wtHotelUnitType.address, self.web3.toHex(unitType));
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
     tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
@@ -183,43 +204,24 @@ var Hotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.removeUnitType = async function(password, hotelAddress, unitTypeName){
+  this.removeUnitType = async function(password, hotelAddress, unitType){
     var self = this;
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
-    const unitTypeHex = util.bufferToHex(util.setLengthRight(self.web3.toHex(unitTypeName), 32));
+    const unitTypeHex = util.bufferToHex(util.setLengthRight(self.web3.toHex(unitType), 32));
     const unitTypeIndex = wtHotel.getUnitTypeNames().indexOf(unitTypeHex);
-    let data = wtHotel.removeUnitType.getData(self.web3.toHex(unitTypeName), unitTypeIndex);
+    let data = wtHotel.removeUnitType.getData(self.web3.toHex(unitType), unitTypeIndex);
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
     const tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
       data: data,
       gasLimit: 4700000
     });
-
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.addUnit = async function(password, hotelAddress, unitType){
-    var self = this;
-    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
-    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
-    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
-    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(await wtHotel.getUnitType(self.web3.toHex(unitType)));
-    let data = wtHotelUnitType.addUnit.getData();
-    data = wtHotel.callUnitType.getData(self.web3.toHex(unitType), data);
-    data = self.wtIndex.callHotel.getData(hotelIndex, data);
-    let tx = await self.wallet.sendTx(password, {
-      to: self.wtIndex.address,
-      data: data,
-      gasLimit: 4700000
-    });
-
-    return await self.wallet.waitForTX(tx.transactionHash);
-  }
-
-  this.editUnitType = async function(password, hotelAddress, unitType, description, minGuests, maxGuests, price){
+    this.editUnitType = async function(password, hotelAddress, unitType, description, minGuests, maxGuests, price){
     var self = this;
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
@@ -236,14 +238,36 @@ var Hotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.removeUnit = async function(password, hotelAddress, unitType, index){
+
+  this.addUnit = async function(password, hotelAddress, unitType){
+    var self = this;
+    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
+    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
+
+    let data = self.web3.eth.contract(self.contracts.HotelUnit.abi).new.getData(hotelAddress, self.web3.toHex(unitType), {data: self.contracts.HotelUnit.unlinked_binary});
+    let tx = await self.wallet.sendTx(password, {
+      data: data,
+      gasLimit: 4700000
+    });
+    const createTx = await self.wallet.waitForTX(tx.transactionHash);
+ 
+    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
+    data = wtHotel.addUnit.getData(self.web3.toHex(unitType), createTx.contractAddress);
+    data = self.wtIndex.callHotel.getData(hotelIndex, data);
+    tx = await self.wallet.sendTx(password, {
+      to: self.wtIndex.address,
+      data: data,
+      gasLimit: 4700000
+    });
+    return await self.wallet.waitForTX(tx.transactionHash);
+  }
+
+  this.removeUnit = async function(password, hotelAddress, unitAddress){
     var self = this;
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
-    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(await wtHotel.getUnitType(self.web3.toHex(unitType)));
-    let data = wtHotelUnitType.removeUnit.getData(index);
-    data = wtHotel.callUnitType.getData(self.web3.toHex(unitType), data);
+    data = wtHotel.removeUnit.getData(unitAddress);
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
     let tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
@@ -253,14 +277,14 @@ var Hotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.unitActive = async function(password, hotelAddress, unitType, active){
+  this.setUnitActive = async function(password, hotelAddress, unitAddress, active){
     var self = this;
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
-    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(await wtHotel.getUnitType(self.web3.toHex(unitType)));
-    let data = wtHotelUnitType.unitActive.getData(active);
-    data = wtHotel.callUnitType.getData(self.web3.toHex(unitType), data);
+    let wtHotelUnit = self.web3.eth.contract(self.contracts.HotelUnit.abi).at(unitAddress);
+    let data = wtHotelUnit.setActive.getData(active);
+    data = wtHotel.callUnit.getData(unitAddress, data);
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
     let tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
@@ -270,14 +294,14 @@ var Hotel = function(options){
     return await self.wallet.waitForTX(tx.transactionHash);
   }
 
-  this.setUnitPrice = async function(password, hotelAddress, unitType, unitIndex, price, fromDay, amountDays){
+  this.setUnitPrice = async function(password, hotelAddress, unitAddress, price, fromDay, amountDays){
     var self = this;
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
-    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(await wtHotel.getUnitType(self.web3.toHex(unitType)));
-    let data = wtHotelUnitType.setPrice.getData(unitIndex, price, fromDay, amountDays);
-    data = wtHotel.callUnitType.getData(self.web3.toHex(unitType), data);
+    let wtHotelUnit = self.web3.eth.contract(self.contracts.HotelUnit.abi).at(unitAddress);
+    let data = wtHotelUnit.setPrice.getData(price, fromDay, amountDays);
+    data = wtHotel.callUnit.getData(unitAddress, data);
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
     let tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
@@ -342,7 +366,6 @@ var Hotel = function(options){
       txs[i].publicCall = self.abiDecoder.decodeMethod(txs[i].decoded.params[0].value);
       txs[i].privateData = self.web3.toAscii(txs[i].decoded.params[1].value);
       txs[i].unitType = self.web3.toAscii( unitType.unitType() ).replace(/\W+/g, "");
-      txs[i].unitName = unitType.units.call( parseInt(txs[i].publicCall.params[1].value) )[0];
       txs[i].hotelAddress = unitType.owner();
       txs[i].hotelName = self.web3.eth.contract(self.contracts.Hotel.abi).at(txs[i].hotelAddress).name();
       txs[i].accepted = false;
@@ -350,23 +373,20 @@ var Hotel = function(options){
     return txs;
   }
 
-  this.getHotels = function(){
+  this.getHotels = function() {
     return this.hotels;
   }
 
-  this.getHotelsAddrs = function(){
+  this.getHotelsAddrs = function() {
     return this.hotelsAddrs;
   }
 
-  this.getHotel = function(hotelAddress){
+  this.getHotel = function(hotelAddress) {
     return this.hotels[hotelAddress];
   }
 
-  this.getReservation = function(hotelAddress, unitType, unitIndex, day){
-    var self = this;
-    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
-    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(wtHotel.getUnitType(self.web3.toHex(unitType)));
-    return wtHotelUnitType.getReservation(unitIndex, day);
+  this.getReservation = function(unitAddress, day) {
+    return this.web3.eth.contract(this.contracts.HotelUnit.abi).at(unitAddress).getReservation(day);
   }
 
 };
