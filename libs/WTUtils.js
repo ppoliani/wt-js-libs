@@ -3,6 +3,7 @@ var WTKeyIndexContract = require('../build/contracts/WTKeyIndex.json');
 var WTIndexContract = require('../build/contracts/WTIndex.json');
 var HotelContract = require('../build/contracts/Hotel.json');
 var UnitTypeContract = require('../build/contracts/UnitType.json');
+var UnitContract = require('../build/contracts/Unit.json');
 var PrivateCallContract = require('../build/contracts/PrivateCall.json');
 var LifTokenContract = require('../build/contracts/LifToken.json');
 var abiDecoder = require('abi-decoder');
@@ -18,6 +19,7 @@ WTUtils.abiDecoder.addABI(HotelContract.abi);
 WTUtils.abiDecoder.addABI(WTIndexContract.abi);
 WTUtils.abiDecoder.addABI(WTKeyIndexContract.abi);
 WTUtils.abiDecoder.addABI(UnitTypeContract.abi);
+WTUtils.abiDecoder.addABI(UnitContract.abi);
 
 WTUtils.hexEncode = function(str){
   var hex, i;

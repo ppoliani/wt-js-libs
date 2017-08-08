@@ -267,7 +267,7 @@ var Hotel = function(options){
     const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);
     const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);
     let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
-    data = wtHotel.removeUnit.getData(unitAddress);
+    let data = wtHotel.removeUnit.getData(unitAddress);
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
     let tx = await self.wallet.sendTx(password, {
       to: self.wtIndex.address,
