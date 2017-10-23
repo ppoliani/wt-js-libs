@@ -22,7 +22,6 @@ var web3 = wtHotelLib.web3;
 const DEBUG = true;
 
 describe('WT User Lib', function() {
-  this.timeout(120000);
   let indexAddress = "0x0";
 
   beforeEach(function() {
