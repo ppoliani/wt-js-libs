@@ -25,11 +25,12 @@ describe('WTHotel', function() {
   let ownerAccount;
 
   before(async function(){
-    const wallet = await web3.eth.accounts.wallet.create(5);
+    const privateKey = "0xfc452929dc8ffd956ebab936ed0f56d71a8c537b0393ea9da4807836942045c5"
+    const wallet = await web3.eth.accounts.wallet.add(privateKey);
     const accounts = await web3.eth.getAccounts();
 
     fundingSource = accounts[0];
-    ownerAccount = web3.eth.accounts.wallet[1].address;
+    ownerAccount = wallet.address;
 
     await util.fundAccount(fundingSource, ownerAccount, 50, web3);
   })

@@ -31,6 +31,7 @@ start_testrpc() {
 
   node_modules/.bin/testrpc -i 10 --gasLimit 6000000 "${accounts[@]}" > /dev/null &
   testrpc_pid=$!
+  sleep 5
 }
 
 if testrpc_running; then
