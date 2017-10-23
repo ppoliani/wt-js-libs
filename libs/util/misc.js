@@ -203,13 +203,3 @@ module.exports = {
   jsArrayFromSolidityArray: jsArrayFromSolidityArray,
   pretty: pretty
 }
-
-
-
-
-
-
-
-
-
-

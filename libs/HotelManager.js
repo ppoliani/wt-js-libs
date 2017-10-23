@@ -9,7 +9,7 @@ const util = require('./util/index.js');
  *     web3: web3,                 // Instantiated web3 object with its provider set.
  *   });
  */
-class Hotel {
+class HotelManager {
 
   constructor(options){
     this.hotels = options.hotels || {};
@@ -439,4 +439,4 @@ class Hotel {
   }
 };
 
-module.exports = Hotel;
+module.exports = HotelManager;

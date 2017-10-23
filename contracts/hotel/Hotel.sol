@@ -83,7 +83,7 @@ contract Hotel is Indexed, Parent {
 	}
 
 	function addUnit(
-    bytes32 unitType,
+    bytes32 unitType, 
     address unit
   ) throughIndex() onlyOwner() {
 		if (unitTypes[unitType] == address(0))
@@ -94,7 +94,7 @@ contract Hotel is Indexed, Parent {
   function removeUnit(address unit) throughIndex() onlyOwner() {
 		removeChild(unit);
 	}
-
+  
   function addImage(string url) throughIndex() onlyOwner() {
     images.push(url);
   }
@@ -112,7 +112,6 @@ contract Hotel is Indexed, Parent {
       (unitTypeNames[index] != unitType)
     )
       throw;
-
     delete unitTypes[unitType];
     delete unitTypeNames[index];
   }
@@ -170,4 +169,5 @@ contract Hotel is Indexed, Parent {
   function getImagesLength() constant returns (uint) {
     return images.length;
   }
+
 }

@@ -8,13 +8,13 @@ const Web3 = require('web3');
 const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider);
 
-let WTHotel;
+let HotelManager;
 
 (process.argv.indexOf('test-build') > 0)
-  ? WTHotel = require('../dist/node/WTHotel_1_.js')
-  : WTHotel = require('../libs/WTHotel_1_.js');
+  ? HotelManager = require('../dist/node/HotelManager.js')
+  : HotelManager = require('../libs/HotelManager.js');
 
-describe('WTHotel', function() {
+describe('HotelManager', function() {
   const hotelName = 'WTHotel';
   const hotelDescription = 'Winding Tree Hotel';
 
@@ -38,7 +38,7 @@ describe('WTHotel', function() {
   beforeEach(async function() {
     index = await util.createIndexContract(fundingSource, web3);
 
-    lib = new WTHotel({
+    lib = new HotelManager({
       indexAddress: index.options.address,
       owner: fundingSource,
       web3: web3
