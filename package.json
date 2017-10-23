@@ -7,10 +7,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha --timeout 10000",
+    "test": "./scripts/test.sh",
     "test-build": "./node_modules/mocha/bin/mocha test -- test-build",
     "postinstall": "scripts/install.sh",
-    "testrpc": "scripts/testrpc.sh",
     "recompile": "rm -rf build && ./node_modules/.bin/truffle compile",
     "build": "webpack --config build.web.config.js && webpack --config build.node.config.js",
     "update-submodules": "git submodule update --recursive && npm run postinstall",
