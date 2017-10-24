@@ -5,6 +5,7 @@ module.exports = {
 
   // Hotel
   execute: hotel.execute,
+  deployIndex: hotel.deployIndex,
   deployUnitType: hotel.deployUnitType,
   deployUnit: hotel.deployUnit,
   getHotelInfo: hotel.getHotelInfo,
@@ -26,9 +27,9 @@ module.exports = {
   bytes32ToString: misc.bytes32ToString,
   locationToUint: misc.locationToUint,
   locationFromUint: misc.locationFromUint,
-  jsArrayFromSolidityArray: misc.jsArrayFromSolidityArray,
-  createIndexContract: misc.createIndexContract,
+  addGasMargin: misc.addGasMargin,
   getInstance: misc.getInstance,
   fundAccount: misc.fundAccount,
+  jsArrayFromSolidityArray: misc.jsArrayFromSolidityArray,
   pretty: misc.pretty
 }

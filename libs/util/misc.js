@@ -11,7 +11,8 @@ const abiDecoder = require('abi-decoder');
 const moment = require('moment');
 const print = JSON.stringify;
 
-// ABI Decoder
+// -------------------------- ABI Decoder / ABI Tables / Binaries ----------------------------------
+
 abiDecoder.addABI(PrivateCallContract.abi);
 abiDecoder.addABI(LifTokenContract.abi);
 abiDecoder.addABI(HotelContract.abi);
@@ -34,6 +35,8 @@ const binaries = {
   HotelUnit: UnitContract.unlinked_binary,
   HotelUnitType: UnitTypeContract.unlinked_binary
 }
+
+// --------------------------- Constants / Converters / Type Helpers -------------------------------
 
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const zeroBytes32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -108,6 +111,12 @@ function bytes32ToString(hex){
   return utf8.decode(str);
 };
 
+//----------------------------------------- Web3 Helpers -------------------------------------------
+
+function addGasMargin(gas, context){
+  return Math.round(gas * context.gasMargin);
+}
+
 function getInstance(name, address, context){
   const web3 = context.web3;
   const abi = abis[name];
@@ -123,28 +132,6 @@ async function fundAccount(from, to, amount, web3){
   });
 };
 
-async function createIndexContract(from, web3){
-  const abi = abis['WTIndex'];
-  const index = new web3.eth.Contract(abi);
-
-  const deployOptions = {
-    data: binaries['WTIndex'],
-    arguments: []
-  };
-
-  const deployEstimate = await index
-    .deploy(deployOptions)
-    .estimateGas();
-
-  const sendOptions = {
-    from: from,
-    gas: deployEstimate
-  };
-
-  return index
-    .deploy(deployOptions)
-    .send(sendOptions);
-}
 /**
  * Traverses a solidity array and returns an array of all its non-zero elements
  * @param {Function} getAtIndex reference to a getter method (e.g. getImage)
@@ -171,12 +158,15 @@ function pretty(msg, obj) {
 }
 
 module.exports = {
+
+  // Contract assets
   abis: abis,
   abiDecoder: abiDecoder,
   binaries: binaries,
+
+  // Constants & Converters
   parseDate: parseDate,
   formatDate: formatDate,
-
   zeroAddress: zeroAddress,
   zeroBytes32: zeroBytes32,
   isZeroBytes32: isZeroBytes32,
@@ -184,18 +174,18 @@ module.exports = {
   isZeroString: isZeroString,
   isZeroUint: isZeroUint,
   isInvalidOpcodeEx: isInvalidOpcodeEx,
-
   lifWei2Lif: lifWei2Lif,
   lif2LifWei: lif2LifWei,
   bytes32ToString: bytes32ToString,
-
   locationToUint: locationToUint,
   locationFromUint: locationFromUint,
 
-  createIndexContract: createIndexContract,
+  // Web3 helpers
+  addGasMargin: addGasMargin,
   getInstance: getInstance,
   fundAccount: fundAccount,
-
   jsArrayFromSolidityArray: jsArrayFromSolidityArray,
+
+  // Debugging
   pretty: pretty
 }

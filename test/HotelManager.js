@@ -17,6 +17,7 @@ let HotelManager;
 describe('HotelManager', function() {
   const hotelName = 'WTHotel';
   const hotelDescription = 'Winding Tree Hotel';
+  const gasMargin = 1.5;
 
   let lib;
   let index;
@@ -25,22 +26,28 @@ describe('HotelManager', function() {
   let ownerAccount;
 
   before(async function(){
-    const privateKey = "0xfc452929dc8ffd956ebab936ed0f56d71a8c537b0393ea9da4807836942045c5"
-    const wallet = await web3.eth.accounts.wallet.add(privateKey);
+    const wallet = await web3.eth.accounts.wallet.create(2);
     const accounts = await web3.eth.getAccounts();
 
     fundingSource = accounts[0];
-    ownerAccount = wallet.address;
+    ownerAccount = wallet["0"].address;
+    daoAccount = wallet["1"].address;
 
     await util.fundAccount(fundingSource, ownerAccount, 50, web3);
+    await util.fundAccount(fundingSource, daoAccount, 50, web3);
   })
 
   beforeEach(async function() {
-    index = await util.createIndexContract(fundingSource, web3);
+    index = await util.deployIndex({
+      owner: daoAccount,
+      gasMargin: gasMargin,
+      web3: web3
+    });
 
     lib = new HotelManager({
       indexAddress: index.options.address,
-      owner: fundingSource,
+      owner: ownerAccount,
+      gasMargin: gasMargin,
       web3: web3
     })
   });
@@ -265,7 +272,7 @@ describe('HotelManager', function() {
         const specialPrice = res[0];
         assert.equal(specialPrice, price);
       }
-    })
+    });
   });
 });
 
