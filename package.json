@@ -40,7 +40,7 @@
     "zeppelin-solidity": "^1.2.0"
   },
   "devDependencies": {
-    "ethereumjs-testrpc": "^3.0.3",
+    "ethereumjs-testrpc": "3.9.2",
     "truffle": "3.4.11",
     "webpack": "^2.4.1",
     "webpack-bundle-size-analyzer": "^2.7.0"
