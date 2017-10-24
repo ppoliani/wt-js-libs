@@ -1,4 +1,4 @@
-'use strict';
+/*'use strict';
 
 var chai = require('chai');
 var assert = chai.assert;
@@ -21,7 +21,9 @@ var web3 = wtHotelLib.web3;
 
 const DEBUG = true;
 
-describe('WT User Lib', function() {
+describe.skip('WT User Lib', function() {
+  this.timeout(120000);
+  
   let indexAddress = "0x0";
 
   beforeEach(function() {
@@ -75,4 +77,4 @@ describe('WT User Lib', function() {
     assert.equal(bookings[0].privateData, 'Test Private Data');
   });
 
-});
+});*/

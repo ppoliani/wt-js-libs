@@ -41,4 +41,4 @@ else
   start_testrpc
 fi
 
-./node_modules/mocha/bin/mocha --timeout 1200000
+./node_modules/mocha/bin/mocha --timeout 10000

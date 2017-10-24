@@ -1,4 +1,4 @@
-
+/*
 var WTKey = require('./WTKey');
 var WTWallet = require('./WTWallet');
 var WTUtils = require('./WTUtils');
@@ -250,7 +250,7 @@ var Hotel = function(options){
       gasLimit: 4700000
     });
     const createTx = await self.wallet.waitForTX(tx.transactionHash);
- 
+
     let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);
     data = wtHotel.addUnit.getData(self.web3.toHex(unitType), createTx.contractAddress);
     data = self.wtIndex.callHotel.getData(hotelIndex, data);
@@ -391,4 +391,4 @@ var Hotel = function(options){
 
 };
 
-module.exports = Hotel;
+module.exports = Hotel;*/
