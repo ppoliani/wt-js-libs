@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "ethereumjs-testrpc": "^3.0.3",
-    "truffle": "3.4.7",
+    "truffle": "^3.4.11",
     "webpack": "^2.4.1",
     "webpack-bundle-size-analyzer": "^2.7.0"
   }

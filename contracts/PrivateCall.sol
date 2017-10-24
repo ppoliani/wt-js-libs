@@ -1,80 +1,99 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.15;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
-/*
- * PrivateCall
- * An extension for a contract taht provides the necessary methods to allow
- * execution and record of private data in the contract methods.
+ /**
+   @title PrivateCall, a contract to execute calls with private data
+
+   A contract that can receive requests to execute calls on itself.
+   Every request can store encrypted data as a parameter, which can later be
+   retrieved and decoded via web3.
+   Requests may or may not require approval from the owner before execution.
+
+   Inherits from OpenZeppelin's `Ownable`
  */
 contract PrivateCall is Ownable {
 
-  // The address with encrypted data that are waiting to be confirmed by owner
-  mapping(bytes32 => CallPending) public callsPending;
+  // The calls requested to be executed indexed by `sha3(data)`
+  mapping(bytes32 => PendingCall) public pendingCalls;
 
+  // If the contract will require the owner's confirmation to execute the call
   bool public waitConfirmation;
 
   modifier fromSelf(){
-    if (msg.sender != address(this))
-      throw;
+    require(msg.sender == address(this));
     _;
   }
 
-  struct CallPending {
+  struct PendingCall {
     bytes callData;
     address sender;
     bool approved;
     bool success;
   }
 
-  function PrivateCall(){
-    waitConfirmation = false;
-  }
+  /**
+     @dev Event triggered when a call is requested
+  **/
+  event CallStarted(address from, bytes32 dataHash);
 
+  /**
+     @dev Event triggered when a call is finished
+  **/
+  event CallFinish(address from, bytes32 dataHash);
+
+  /**
+     @dev `changeConfirmation` allows the owner of the contract to switch the
+     `waitConfirmation` value
+
+     @param _waitConfirmation The new `waitConfirmation` value
+   */
   function changeConfirmation(bool _waitConfirmation) onlyOwner() {
     waitConfirmation = _waitConfirmation;
   }
 
-  event CallStarted(address from, bytes32 dataHash);
-  event CallFinish(address from, bytes32 dataHash);
+  /**
+     @dev `beginCall` requests the execution of a call by the contract
 
-  function beginCall(bytes publicCallData, bytes privateData) returns (bool) {
+     @param publicCallData The call data to be executed
+     @param privateData The extra, encrypted data stored as a parameter
+     returns true if the call was requested succesfully
+   */
+  function beginCall(bytes publicCallData, bytes privateData) {
 
-    bytes32 msgDataHash = sha3(msg.data);
+    bytes32 msgDataHash = keccak256(msg.data);
 
-    if (callsPending[msgDataHash].sender == address(0)) {
-      callsPending[msgDataHash] = CallPending(
-        publicCallData,
-        tx.origin,
-        !waitConfirmation,
-        false
-      );
-      CallStarted( tx.origin, msgDataHash);
-      if (!waitConfirmation){
-        if (this.call(callsPending[msgDataHash].callData))
-          callsPending[msgDataHash].success = true;
-        CallFinish(callsPending[msgDataHash].sender, msgDataHash);
-        return true;
-      } else {
-        return true;
-      }
-    } else {
-      return false;
+    require(pendingCalls[msgDataHash].sender == address(0));
+
+    pendingCalls[msgDataHash] = PendingCall(
+      publicCallData,
+      tx.origin,
+      !waitConfirmation,
+      false
+    );
+    CallStarted( tx.origin, msgDataHash);
+    if (!waitConfirmation){
+      require(this.call(pendingCalls[msgDataHash].callData));
+      pendingCalls[msgDataHash].success = true;
+      CallFinish(pendingCalls[msgDataHash].sender, msgDataHash);
     }
-
   }
 
+  /**
+     @dev `continueCall` allows the owner to approve the execution of a call
+
+     @param msgDataHash The hash of the call to be executed
+   */
   function continueCall(bytes32 msgDataHash) onlyOwner() {
 
-    if (callsPending[msgDataHash].sender == address(0))
-      throw;
+    require(pendingCalls[msgDataHash].sender != address(0));
 
-    callsPending[msgDataHash].approved = true;
+    pendingCalls[msgDataHash].approved = true;
 
-    if (this.call(callsPending[msgDataHash].callData))
-      callsPending[msgDataHash].success = true;
+    require(this.call(pendingCalls[msgDataHash].callData));
+    pendingCalls[msgDataHash].success = true;
 
-    CallFinish(callsPending[msgDataHash].sender, msgDataHash);
+    CallFinish(pendingCalls[msgDataHash].sender, msgDataHash);
 
   }
 

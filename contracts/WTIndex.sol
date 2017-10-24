@@ -1,68 +1,117 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.15;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./hotel/Hotel.sol";
-import "./Parent.sol";
 
-/*
- * WTIndex
- * Public resgitry of all hotels and airlines regsitered on WT
- * The hotels and airlines are saved in array and can be filtered by the owner
- * address.
+/**
+   @title WTIndex, registry of all hotels registered on WT
+
+   The hotels are stored in an array and can be filtered by the owner
+   address.
+
+   Inherits from OpenZeppelin's `Ownable`
  */
-contract WTIndex is Ownable, Parent {
+contract WTIndex is Ownable {
 
-  Hotel[] public hotels;
-  mapping(address => address[]) public hotelsByOwner;
+  // Array of addresses of `Hotel` contracts and mapping of their index position
+  address[] public hotels;
+  mapping(address => uint) public hotelsIndex;
 
-  address DAO;
+  // Mapping of the hotels indexed by manager's address
+  mapping(address => address[]) public hotelsByManager;
 
+  // The address of the DAO contract
+  address public DAO;
+
+  // Address of the LifToken contract
+  address public LifToken;
+
+  /**
+     @dev Event triggered every time hotel is registered or called
+  **/
   event log();
 
-  event voteGiven(address receiver);
-
+  /**
+     @dev Constructor. Creates the `WTIndex` contract
+   */
 	function WTIndex() {
 		hotels.length ++;
 	}
 
-  // Only owner methods
+  /**
+     @dev `setDAO` allows the owner of the contract to change the
+     address of the DAO contract
 
+     @param _DAO The new contract address
+   */
   function setDAO(address _DAO) onlyOwner() {
     DAO = _DAO;
   }
 
-  // Public external methods
+  /**
+     @dev `setLifToken` allows the owner of the contract to change the
+     address of the LifToken contract
 
+     @param _LifToken The new contract address
+   */
+  function setLifToken(address _LifToken) onlyOwner() {
+    LifToken = _LifToken;
+  }
+
+  /**
+     @dev `registerHotel` Register new hotel in the index
+
+     @param name The name of the hotel
+     @param description The description of the hotel
+   */
   function registerHotel(string name, string description) external {
-    Hotel newHotel = new Hotel(name, description);
+    Hotel newHotel = new Hotel(name, description, msg.sender);
+    hotelsIndex[newHotel] = hotels.length;
     hotels.push(newHotel);
-    hotelsByOwner[msg.sender].push(newHotel);
-    addChild(newHotel);
+    hotelsByManager[msg.sender].push(newHotel);
 		log();
 	}
 
-	function callHotel(uint index, bytes data) external {
-		if (!hotelsByOwner[msg.sender][index].call(data))
-			throw;
-		else
-			log();
+  /**
+     @dev `removeHotel` Allows a manager to remove a hotel
+
+     @param index The hotel's index
+   */
+  function removeHotel(uint index) external {
+    require(hotelsByManager[msg.sender][index] != address(0));
+    delete hotels[hotelsIndex[hotelsByManager[msg.sender][index]]];
+    delete hotelsIndex[hotelsByManager[msg.sender][index]];
+    delete hotelsByManager[msg.sender][index];
 	}
 
-  // Only childs methods
+  /**
+     @dev `callHotel` Call hotel in the index, the hotel can only
+     be called by its manager
 
-  function giveVote(address userAddress) onlyChild() {
-      // TO DO
-      voteGiven(msg.sender);
+     @param index The index position of the hotel
+     @param data The data to be executed in the hotel contract
+   */
+	function callHotel(uint index, bytes data) external {
+		require(hotelsByManager[msg.sender][index].call(data));
+		log();
+	}
+
+  /**
+     @dev `getHotelsLength` get the length of the `hotels` array
+
+     @return uint Length of the `hotels` array
+   */
+  function getHotelsLength() constant returns (uint) {
+    return hotels.length;
   }
 
-  // Public constant methods
+  /**
+     @dev `getHotelsByManager` get all the hotels belonging to one manager
 
-  function getHotels() constant returns(Hotel[]){
-    return hotels;
-  }
-
-	function getHotelsByOwner(address owner) constant returns(address[]){
-		return hotelsByOwner[owner];
+     returns The addresses of `Hotel` contracts that belong to one manager
+   */
+	function getHotelsByManager(address owner) constant returns(address[]){
+		return hotelsByManager[owner];
 	}
 
 }
