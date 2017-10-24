@@ -111,15 +111,6 @@ class HotelManager {
   }
 
   /**
-   * Sets the value of the Hotels class owner's account
-   * @param {Address} account ex: `0xabc..345`
-   */
-  setOwner(account){
-    this.owner = account;
-    this.context.owner = account;
-  }
-
-  /**
    * Sets the Hotel class's web3 instance.
    * @param {Object} _web3 Web3 instance, already instantiated with a provider
    */
@@ -146,7 +137,7 @@ class HotelManager {
     const options = {
       from: this.owner,
       to: this.WTIndex.options.address,
-      gas: estimate,
+      gas: util.addGasMargin(estimate, this.context),
       data: data
     }
 
