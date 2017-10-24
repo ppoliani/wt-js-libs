@@ -42,5 +42,3 @@ else
 fi
 
 ./node_modules/mocha/bin/mocha --timeout 10000
-
-
