@@ -1,6 +1,5 @@
 const utf8 = require('utf8');
 
-const WTKeyIndexContract = require('../../build/contracts/WTKeyIndex.json');
 const WTIndexContract = require('../../build/contracts/WTIndex.json');
 const HotelContract = require('../../build/contracts/Hotel.json');
 const UnitTypeContract = require('../../build/contracts/UnitType.json');
@@ -17,13 +16,11 @@ abiDecoder.addABI(PrivateCallContract.abi);
 abiDecoder.addABI(LifTokenContract.abi);
 abiDecoder.addABI(HotelContract.abi);
 abiDecoder.addABI(WTIndexContract.abi);
-abiDecoder.addABI(WTKeyIndexContract.abi);
 abiDecoder.addABI(UnitTypeContract.abi);
 abiDecoder.addABI(UnitContract.abi);
 
 const abis = {
   WTIndex: WTIndexContract.abi,
-  WTKeyIndex: WTKeyIndexContract.abi,
   Hotel: HotelContract.abi,
   LifToken: LifTokenContract.abi,
   HotelUnit: UnitContract.abi,
@@ -32,7 +29,6 @@ const abis = {
 
 const binaries = {
   WTIndex: WTIndexContract.unlinked_binary,
-  WTKeyIndex: WTKeyIndexContract.unlinked_binary,
   Hotel: HotelContract.unlinked_binary,
   LifToken: LifTokenContract.unlinked_binary,
   HotelUnit: UnitContract.unlinked_binary,

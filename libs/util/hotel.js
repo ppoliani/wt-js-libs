@@ -123,7 +123,7 @@ async function getHotelAndIndex(address, context){
   const methods = context.WTIndex.methods;
   const owner = context.owner;
 
-  const addresses = await methods.getHotelsByOwner(owner).call();
+  const addresses = await methods.getHotelsByManager(owner).call();
   const index = await addresses.indexOf(address);
   const hotel = getInstance('Hotel', address, context);
   return {
@@ -190,9 +190,9 @@ async function getHotelInfo(wtHotel, context){
 
   // Hotel Units
   const units = {};
-  const unitsLength = await wtHotel.methods.getChildsLength().call();
+  const unitsLength = await wtHotel.methods.getUnitsLength().call();
   const unitAddresses = await jsArrayFromSolidityArray(
-    wtHotel.methods.childs,
+    wtHotel.methods.units,
     parseInt(unitsLength),
     isZeroAddress
   );
@@ -210,7 +210,7 @@ async function getHotelInfo(wtHotel, context){
   // Hotel Info
   const name =        await wtHotel.methods.name().call();
   const description = await wtHotel.methods.description().call();
-  //const manager =     await wtHotel.methods.manager().call();
+  const manager =     await wtHotel.methods.manager().call();
   const lineOne =     await wtHotel.methods.lineOne().call();
   const lineTwo =     await wtHotel.methods.lineTwo().call();
   const zip =         await wtHotel.methods.zip().call();
@@ -223,7 +223,7 @@ async function getHotelInfo(wtHotel, context){
   return {
     name: isZeroString(name) ? null : name,
     description: isZeroString(description) ? null : description,
-    //manager: isZeroAddress(manager) ? null : manager,
+    manager: isZeroAddress(manager) ? null : manager,
     lineOne : isZeroString(lineOne) ? null : lineOne,
     lineTwo : isZeroString(lineTwo) ? null : lineTwo,
     zip : isZeroString(zip) ? null : zip,

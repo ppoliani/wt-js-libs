@@ -50,7 +50,7 @@ class HotelManager {
    */
   async fetchHotels(){
     this.hotelsAddrs = await this.WTIndex.methods
-      .getHotelsByOwner(this.owner)
+      .getHotelsByManager(this.owner)
       .call();
 
     this.hotels = {};
@@ -224,11 +224,10 @@ class HotelManager {
       index
     } = await util.getHotelAndIndex(hotelAddress, this.context);
 
-    const typeHex = this.web3.utils.toHex(unitType);
     const instance = await util.deployUnitType(unitType, hotelAddress, this.context)
 
     const data = hotel.methods
-      .addUnitType(instance.options.address, typeHex)
+      .addUnitType(instance.options.address)
       .encodeABI();
 
     return util.execute(data, index, this.context);
@@ -355,11 +354,10 @@ class HotelManager {
       index
     } = await util.getHotelAndIndex(hotelAddress, this.context);
 
-    const typeHex = this.web3.utils.toHex(unitType);
     const instance = await util.deployUnit(unitType, hotelAddress, this.context)
 
     const data = hotel.methods
-      .addUnit(typeHex, instance.options.address)
+      .addUnit(instance.options.address)
       .encodeABI();
 
     return util.execute(data, index, this.context);
@@ -428,7 +426,7 @@ class HotelManager {
     const unit = util.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
-      .setPrice(price, fromDay, amountDays)
+      .setSpecialPrice(price, fromDay, amountDays)
       .encodeABI();
 
     const hotelData = hotel.methods
