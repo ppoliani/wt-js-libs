@@ -19,7 +19,9 @@ class HotelManager {
     this.context = options;
 
     this.WTIndex = util.getInstance('WTIndex', options.indexAddress, this.context);
+
     this.context.WTIndex = this.WTIndex;
+    this.context.gasMargin = options.gasMargin || 1;
   }
 
   /**
@@ -29,7 +31,7 @@ class HotelManager {
   async fetchBookings(){}
 
   /**
-   * Async fetches from the blockchain data for Hotel at a given contract
+   * Async retrieves data assoiciated with a given Hotel contract address
    * address
    * @param  {Address} hotelAddress address of Hotel contract
    * @return {Object}
@@ -43,7 +45,7 @@ class HotelManager {
   }
 
   /**
-   * Async fetches from the blockchain data for all of an owners Hotels contracts
+   * Async retrieves all data associated with an owners Hotels contracts
    * @return {Object}
    * @example
    * (we should have a doc link to JSON output here)
@@ -62,7 +64,7 @@ class HotelManager {
   }
 
   /**
-   * Async fetches from the blockchain information about bookings for a specific unit
+   * Async receives information about bookings for a specific unit
    * on a specific UTC day.
    * @param  {Address} unitAddress contract address of Unit
    * @param  {Number}  day         Integer UTC day since 1-1-1970
@@ -109,15 +111,6 @@ class HotelManager {
   }
 
   /**
-   * Sets the value of the Hotels class owner's account
-   * @param {Address} account ex: `0xabc..345`
-   */
-  setOwner(account){
-    this.owner = account;
-    this.context.owner = account;
-  }
-
-  /**
    * Sets the Hotel class's web3 instance.
    * @param {Object} _web3 Web3 instance, already instantiated with a provider
    */
@@ -137,14 +130,18 @@ class HotelManager {
       .registerHotel(name, description)
       .estimateGas();
 
+    const data = await this.WTIndex.methods
+      .registerHotel(name, description)
+      .encodeABI();
+
     const options = {
       from: this.owner,
-      gas: estimate
+      to: this.WTIndex.options.address,
+      gas: util.addGasMargin(estimate, this.context),
+      data: data
     }
 
-    return this.WTIndex.methods
-      .registerHotel(name, description)
-      .send(options)
+    return this.web3.eth.sendTransaction(options);
   }
 
   /**
@@ -283,7 +280,7 @@ class HotelManager {
       .callUnitType(typeHex, editData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context, 400000); // Can't estimate
+    return util.execute(hotelData, index, this.context);
   }
 
   /**
@@ -311,7 +308,7 @@ class HotelManager {
       .callUnitType(typeHex, amenityData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context, 400000); // Can't estimate
+    return util.execute(hotelData, index, this.context);
   }
 
   /**
@@ -339,7 +336,7 @@ class HotelManager {
       .callUnitType(typeHex, amenityData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context, 400000); // Can't estimate
+    return util.execute(hotelData, index, this.context);
   }
 
   /**
@@ -379,7 +376,7 @@ class HotelManager {
       .removeUnit(unitAddress)
       .encodeABI();
 
-    return util.execute(data, index, this.context, 400000); // Can't estimate
+    return util.execute(data, index, this.context);
   }
 
   /**
@@ -404,7 +401,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context, 400000); // Can't estimate
+    return util.execute(hotelData, index, this.context);
   }
 
   /**
@@ -433,7 +430,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context, 400000); // Can't estimate
+    return util.execute(hotelData, index, this.context);
   }
 };
 

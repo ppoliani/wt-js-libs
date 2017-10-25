@@ -8,6 +8,7 @@ const {
   isZeroString,
   bytes32ToString,
   locationFromUint,
+  addGasMargin,
   jsArrayFromSolidityArray,
   pretty,
 } = require('./misc')
@@ -22,25 +23,47 @@ const {
  */
 async function execute(data, index, context, gas){
 
-  const estimate = await context.WTIndex.methods
+  const callData = await context.WTIndex.methods
     .callHotel(index, data)
-    .estimateGas();
+    .encodeABI();
 
   const options = {
     from: context.owner,
-    gas: gas ? gas : estimate
+    to: context.WTIndex.options.address,
+    data: callData
   };
 
-  return context.WTIndex.methods
-    .callHotel(index, data)
-    .send(options);
+  const estimate = await context.web3.eth.estimateGas(options);
+  options.gas = gas || addGasMargin(estimate, context);
+
+  return context.web3.eth.sendTransaction(options);
+}
+
+/**
+ * Deploys an Index contract that functions as a registry and transaction entry
+ * point for the contract system's Hotels.
+ * system's Hotels
+ * @param  {Object}  context  ex: context.web3 / context.owner
+ * @return {Instance}         WTIndex instance
+ */
+async function deployIndex(context){
+  const abi = abis['WTIndex'];
+  const instance = new context.web3.eth.Contract(abi);
+
+  const deployOptions = {
+    data: binaries['WTIndex'],
+    arguments: []
+  };
+
+  const tx = await deployContract(instance, deployOptions, context);
+  return getInstance('WTIndex', tx.contractAddress, context);
 }
 
 /**
  * Deploys a Unit contract which will subsequently be added to a Hotel's list of units
  * @param  {String}  unitType     name of this unit's UnitType, ex: `BASIC_ROOM`
  * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
- * @param  {Object}  context      ex: context.web3 / context.spender
+ * @param  {Object}  context      ex: context.web3 / context.owner
  * @return {Promievent}           web3 deployment result
  */
 async function deployUnit(unitType, hotelAddress, context){
@@ -53,15 +76,16 @@ async function deployUnit(unitType, hotelAddress, context){
     arguments: [hotelAddress, typeHex]
   };
 
-  return deployContract(instance, deployOptions, context);
+  const tx = await deployContract(instance, deployOptions, context);
+  return getInstance('HotelUnitType', tx.contractAddress, context);
 }
 
 /**
  * Deploys a UnitType contract which will subsequently be added to a Hotel's list of unit types
  * @param  {String}  unitType     name of UnitType, ex: `BASIC_ROOM`
  * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
- * @param  {Object}  context      ex: context.web3 / context.spender
- * @return {Promievent}           web3 deployment result
+ * @param  {Object}  context      ex: context.web3 / context.owner
+ * @return {Instance}             UnitType contract instance
  */
 async function deployUnitType(unitType, hotelAddress, context){
   const typeHex = context.web3.utils.toHex(unitType);
@@ -73,7 +97,8 @@ async function deployUnitType(unitType, hotelAddress, context){
     arguments: [hotelAddress, typeHex]
   };
 
-  return deployContract(instance, deployOptions, context);
+  const tx = await deployContract(instance, deployOptions, context);
+  return getInstance('HotelUnitType', tx.contractAddress, context);
 }
 
 /**
@@ -84,18 +109,19 @@ async function deployUnitType(unitType, hotelAddress, context){
  * @return {Promievent}
  */
 async function deployContract(instance, deployOptions, context){
-  const deployEstimate = await instance
+  const data = await instance
     .deploy(deployOptions)
-    .estimateGas();
+    .encodeABI();
 
-  const sendOptions = {
+  const options = {
     from: context.owner,
-    gas: deployEstimate
+    data: data
   };
 
-  return instance
-    .deploy(deployOptions)
-    .send(sendOptions);
+  estimate = await context.web3.eth.estimateGas(options);
+  options.gas = addGasMargin(estimate, context);
+
+  return context.web3.eth.sendTransaction(options);
 }
 
 /**
@@ -242,6 +268,7 @@ async function getHotelInfo(wtHotel, context){
 
 module.exports = {
   execute: execute,
+  deployIndex: deployIndex,
   deployUnitType: deployUnitType,
   deployUnit: deployUnit,
   getHotelAndIndex: getHotelAndIndex,
