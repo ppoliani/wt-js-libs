@@ -249,7 +249,7 @@ describe('HotelManager', function() {
       assert.isFalse(hotel.units[unitAddress].active);
     })
 
-    it('setUnitPrice: sets the units price', async () => {
+    it.skip('setUnitPrice: sets the units price', async () => {
       const price =  "100 eur";
       const fromDay = 77;
       const daysAmount = 5;
