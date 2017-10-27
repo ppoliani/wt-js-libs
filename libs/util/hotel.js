@@ -3,10 +3,13 @@ const {
   binaries,
   getInstance,
   isZeroAddress,
+  isZeroBytes8,
   isZeroBytes32,
   isZeroUint,
   isZeroString,
   bytes32ToString,
+  bnToPrice,
+  lifWei2Lif,
   locationFromUint,
   addGasMargin,
   jsArrayFromSolidityArray,
@@ -228,8 +231,19 @@ async function getHotelInfo(wtHotel, context){
       const instance = getInstance('HotelUnit', address, context);
       units[address] = {};
       units[address].active = await instance.methods.active().call();
+
       const unitType = await instance.methods.unitType().call();
       units[address].unitType = bytes32ToString(unitType);
+
+      const code = await instance.methods.currencyCode().call();
+      units[address].currencyCode = isZeroBytes8(code) ? null : context.web3.utils.hexToNumber(code);
+
+      const defaultPrice = await instance.methods.defaultPrice().call();
+      units[address].defaultPrice = isZeroUint(defaultPrice) ? null : bnToPrice(defaultPrice);
+
+      let lifWei = await instance.methods.defaultLifPrice().call();
+      lifWei = lifWei2Lif(lifWei, context);
+      units[address].defaultLifPrice = isZeroUint(lifWei) ? null : parseInt(lifWei);
     }
   }
 

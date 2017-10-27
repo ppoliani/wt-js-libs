@@ -56,7 +56,7 @@ describe('HotelManager', function() {
 
     it('should create a hotel | retrieve hotel from the blockchain', async function() {
       await lib.createHotel(hotelName, hotelDescription);
-      const hotels = await lib.fetchHotels();
+      const hotels = await lib.getHotels();
       const address = Object.keys(hotels)[0];
       const hotel = hotels[address];
 
@@ -70,7 +70,7 @@ describe('HotelManager', function() {
 
     beforeEach(async function(){
       await lib.createHotel(hotelName, hotelDescription);
-      const hotels = await lib.fetchHotels();
+      const hotels = await lib.getHotels();
       address = Object.keys(hotels)[0];
     });
 
@@ -79,7 +79,7 @@ describe('HotelManager', function() {
       const newDescription = 'Awesome Winding Tree Hotel';
 
       await lib.changeHotelInfo(address, newName, newDescription);
-      const hotel = await lib.fetchHotel(address);
+      const hotel = await lib.getHotel(address);
 
       assert.equal(hotel.name, newName);
       assert.equal(hotel.description, newDescription);
@@ -92,7 +92,7 @@ describe('HotelManager', function() {
       const country = 'Spain';
 
       await lib.changeHotelAddress(address, lineOne, lineTwo, zip, country);
-      const hotel = await lib.fetchHotel(address);
+      const hotel = await lib.getHotel(address);
 
       assert.equal(hotel.lineOne, lineOne);
       assert.equal(hotel.lineTwo, lineTwo);
@@ -106,7 +106,7 @@ describe('HotelManager', function() {
       const latitude = 15;
 
       await lib.changeHotelLocation(address, timezone, latitude, longitude);
-      const hotel = await lib.fetchHotel(address);
+      const hotel = await lib.getHotel(address);
 
       assert.equal(hotel.longitude, longitude);
       assert.equal(hotel.latitude, latitude);
@@ -120,13 +120,13 @@ describe('HotelManager', function() {
 
     beforeEach(async function(){
       await lib.createHotel(hotelName, hotelDescription);
-      const hotels = await lib.fetchHotels();
+      const hotels = await lib.getHotels();
       address = Object.keys(hotels)[0];
     });
 
     it('addUnitType: adds a unit type to the hotel', async () => {
       await lib.addUnitType(address, typeName);
-      const hotel = await lib.fetchHotel(address);
+      const hotel = await lib.getHotel(address);
 
       assert(hotel.unitTypeNames.includes(typeName));
       assert.isDefined(hotel.unitTypes[typeName]);
@@ -134,7 +134,7 @@ describe('HotelManager', function() {
 
     it('addUnitType: initializes info correctly', async() => {
       await lib.addUnitType(address, typeName);
-      let hotel = await lib.fetchHotel(address);
+      let hotel = await lib.getHotel(address);
 
       assert.isNull(hotel.unitTypes[typeName].info.description);
       assert.isNull(hotel.unitTypes[typeName].info.price);
@@ -144,13 +144,13 @@ describe('HotelManager', function() {
 
     it('removeUnitType: removes a UnitType from the hotel', async() => {
       await lib.addUnitType(address, typeName);
-      let hotel = await lib.fetchHotel(address);
+      let hotel = await lib.getHotel(address);
 
       assert(hotel.unitTypeNames.includes(typeName));
       assert.isDefined(hotel.unitTypes[typeName]);
 
       await lib.removeUnitType(address, typeName);
-      hotel = await lib.fetchHotel(address);
+      hotel = await lib.getHotel(address);
 
       assert.isFalse(hotel.unitTypeNames.includes(typeName));
       assert.isUndefined(hotel.unitTypes[typeName]);
@@ -171,7 +171,7 @@ describe('HotelManager', function() {
         maxGuests,
         price
       );
-      let hotel = await lib.fetchHotel(address);
+      let hotel = await lib.getHotel(address);
 
       assert.equal(hotel.unitTypes[typeName].info.description, description);
       assert.equal(hotel.unitTypes[typeName].info.price, price);
@@ -183,7 +183,7 @@ describe('HotelManager', function() {
       const amenity = 10;
       await lib.addUnitType(address, typeName);
       await lib.addAmenity(address, typeName, amenity);
-      let hotel = await lib.fetchHotel(address);
+      let hotel = await lib.getHotel(address);
 
       assert.isTrue(hotel.unitTypes[typeName].amenities.includes(amenity));
     });
@@ -192,31 +192,31 @@ describe('HotelManager', function() {
       const amenity = 10;
       await lib.addUnitType(address, typeName);
       await lib.addAmenity(address, typeName, amenity);
-      let hotel = await lib.fetchHotel(address);
+      let hotel = await lib.getHotel(address);
 
       assert.isTrue(hotel.unitTypes[typeName].amenities.includes(amenity));
 
       await lib.removeAmenity(address, typeName, amenity);
-      hotel = await lib.fetchHotel(address);
+      hotel = await lib.getHotel(address);
 
       assert.isFalse(hotel.unitTypes[typeName].amenities.includes(amenity));
     });
   });
 
-  describe('Units', () => {
+  describe('Units: Adding and Removing', () => {
     const typeName = 'BASIC_ROOM'
     let address;
 
     beforeEach(async function(){
       await lib.createHotel(hotelName, hotelDescription);
-      const hotels = await lib.fetchHotels();
+      const hotels = await lib.getHotels();
       address = Object.keys(hotels)[0];
       await lib.addUnitType(address, typeName);
     });
 
     it('addUnit: adds a unit to the hotel', async () => {
       await lib.addUnit(address, typeName);
-      const hotel = await lib.fetchHotel(address);
+      const hotel = await lib.getHotel(address);
       const unitAddress = hotel.unitAddresses[0];
 
       assert.isDefined(hotel.units[unitAddress]);
@@ -226,53 +226,166 @@ describe('HotelManager', function() {
 
     it('removeUnit: removes a unit from the hotel', async () => {
       await lib.addUnit(address, typeName);
-      let hotel = await lib.fetchHotel(address);
+      let hotel = await lib.getHotel(address);
       const unitAddress = hotel.unitAddresses[0];
 
       assert.isDefined(hotel.units[unitAddress]);
 
       await lib.removeUnit(address, unitAddress);
-      hotel = await lib.fetchHotel(address);
+      hotel = await lib.getHotel(address);
 
       assert.isUndefined(hotel.units[unitAddress]);
     });
+  });
+
+  describe('Units: Attributes and Prices', function(){
+    const typeName = 'BASIC_ROOM'
+    let hotelAddress;
+    let unitAddress;
+    let hotel;
+
+    beforeEach(async function(){
+      await lib.createHotel(hotelName, hotelDescription);
+      const hotels = await lib.getHotels();
+      hotelAddress = Object.keys(hotels)[0];
+
+      await lib.addUnitType(hotelAddress, typeName);
+      await lib.addUnit(hotelAddress, typeName);
+      hotel = await lib.getHotel(hotelAddress);
+      unitAddress = hotel.unitAddresses[0];
+    });
 
     it('setUnitActive: sets the units active status', async () => {
-      await lib.addUnit(address, typeName);
-      let hotel = await lib.fetchHotel(address);
-      const unitAddress = hotel.unitAddresses[0];
-
       assert.isTrue(hotel.units[unitAddress].active);
 
-      await lib.setUnitActive(address, unitAddress, false);
-      hotel = await lib.fetchHotel(address);
+      await lib.setUnitActive(hotelAddress, unitAddress, false);
+      hotel = await lib.getHotel(hotelAddress);
       assert.isFalse(hotel.units[unitAddress].active);
     })
 
-    it.skip('setUnitPrice: sets the units price', async () => {
-      const price =  "100 eur";
-      const fromDay = 77;
+    it('setDefaultPrice: set / get the default price', async() => {
+      const price = 100.00
+      await lib.setDefaultPrice(hotelAddress, unitAddress, price);
+      hotel = await lib.getHotel(hotelAddress)
+      const priceSet = hotel.units[unitAddress].defaultPrice;
+      assert.equal(priceSet, price);
+    })
+
+    it('setDefaultLifPrice: set / get the default Lif price', async() => {
+      const lifPrice = 20
+      await lib.setDefaultLifPrice(hotelAddress, unitAddress, lifPrice);
+      hotel = await lib.getHotel(hotelAddress);
+      const lifPriceSet = await hotel.units[unitAddress].defaultLifPrice;
+
+      assert.equal(lifPriceSet, lifPrice);
+    })
+
+    it('setUnitSpecialPrice: sets the units price across a range of dates', async () => {
+      const price =  100.00;
+      const fromDate = new Date('10/10/2020');
       const daysAmount = 5;
 
-      await lib.addUnit(address, typeName);
-      let hotel = await lib.fetchHotel(address);
-      const unitAddress = hotel.unitAddresses[0];
-
-      await lib.setUnitPrice(
-        address,
+      await lib.setUnitSpecialPrice(
+        hotelAddress,
         unitAddress,
         price,
-        fromDay,
+        fromDate,
         daysAmount
-      );
+      )
+
+      const fromDay = util.parseDate(fromDate);
       const range = _.range(fromDay, fromDay + daysAmount);
 
       for (let day of range) {
-        const res = await lib.fetchReservation(unitAddress, day);
-        const specialPrice = res[0];
+        const {
+          specialPrice,
+          specialLifPrice,
+          bookedBy
+        } = await lib.getReservation(unitAddress, day);
+
         assert.equal(specialPrice, price);
       }
     });
+
+    it('setUnitSpecialLifPrice: sets the units price across a range of dates', async () => {
+      const price =  100;
+      const fromDate = new Date('10/10/2020');
+      const daysAmount = 5;
+
+      await lib.setUnitSpecialLifPrice(
+        hotelAddress,
+        unitAddress,
+        price,
+        fromDate,
+        daysAmount
+      )
+
+      const fromDay = util.parseDate(fromDate);
+      const range = _.range(fromDay, fromDay + daysAmount);
+
+      for (let day of range) {
+        const {
+          specialPrice,
+          specialLifPrice,
+          bookedBy
+        } = await lib.getReservation(unitAddress, day);
+
+        assert.equal(specialLifPrice, price);
+      }
+    });
+
+    it('setCurrencyCode: sets the setCurrencyCode', async() => {
+      const currencyCode = 10;
+
+      assert.isNull(hotel.units[unitAddress].currencyCode);
+
+      await lib.setCurrencyCode(hotelAddress, unitAddress, currencyCode);
+      hotel = await lib.getHotel(hotelAddress);
+
+      const setCurrencyCode = hotel.units[unitAddress].currencyCode;
+      assert.equal(setCurrencyCode, currencyCode);
+    });
+
+    it('setCurrencyCode: throws on invalid currencyCode', async() => {
+      try {
+        await lib.setCurrencyCode(hotelAddress, unitAddress, 256);
+        assert(false);
+      } catch(e){}
+
+      try {
+        await lib.setCurrencyCode(hotelAddress, unitAddress, -5);
+        assert(false);
+      } catch(e){}
+
+      try {
+        await lib.setCurrencyCode(hotelAddress, unitAddress, 'EUR');
+        assert(false);
+      } catch(e){}
+    });
+
+    it('getCost: gets the total cost for a booking over a range of days', async () => {
+      const fromDate = new Date('10/10/2020');
+      const daysAmount = 5;
+      const price = 100.00;
+      const expectedCost = price * daysAmount;
+
+      await lib.setDefaultPrice(hotelAddress, unitAddress, price);
+      const actualCost = await lib.getCost(unitAddress, fromDate, daysAmount);
+
+      assert.equal(expectedCost, actualCost);
+    })
+
+    it('getLifCost: gets the total cost for a booking over a range of days', async () => {
+      const fromDate = new Date('10/10/2020');
+      const daysAmount = 5;
+      const price = 20;
+      const expectedCost = price * daysAmount;
+
+      await lib.setDefaultLifPrice(hotelAddress, unitAddress, price);
+      const actualCost = await lib.getLifCost(unitAddress, fromDate, daysAmount);
+
+      assert.equal(expectedCost, actualCost);
+    })
   });
 });
 
