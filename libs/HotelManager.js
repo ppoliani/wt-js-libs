@@ -28,7 +28,7 @@ class HotelManager {
    * Async retrieves the bookings transaction history associated with each of the owner's hotels.
    * @return {Object}
    */
-  async fetchBookings(){}
+  async getBookings(){}
 
   /**
    * Async retrieves data assoiciated with a given Hotel contract address
@@ -38,7 +38,7 @@ class HotelManager {
    * @example
    *  (we should have a doc link to JSON output here)
    */
-  async fetchHotel(hotelAddress){
+  async getHotel(hotelAddress){
     const hotel = util.getInstance('Hotel', hotelAddress, this.context);
     this.hotels[hotelAddress] = await util.getHotelInfo(hotel, this.context);
     return this.hotels[hotelAddress];
@@ -50,14 +50,14 @@ class HotelManager {
    * @example
    * (we should have a doc link to JSON output here)
    */
-  async fetchHotels(){
+  async getHotels(){
     this.hotelsAddrs = await this.WTIndex.methods
       .getHotelsByManager(this.owner)
       .call();
 
     this.hotels = {};
     for (let address of this.hotelsAddrs){
-      await this.fetchHotel(address)
+      await this.getHotel(address)
     }
 
     return this.hotels;
@@ -65,49 +65,100 @@ class HotelManager {
 
   /**
    * Async receives information about bookings for a specific unit
-   * on a specific UTC day.
+   * on a specific date.
    * @param  {Address} unitAddress contract address of Unit
-   * @param  {Number}  day         Integer UTC day since 1-1-1970
+   * @param  {Date}    day         date to get info for
    * @return {Promievent}
    * @example
    *   const {
-   *     specialPrice, // Price string: e.g '200 euros'
-   *     bookedBy      // Address: e.g. '0x39a...2b'
-   *   } = await lib.fetchReservation('0xab3..cd', 11521330);
+   *     specialPrice,    // Price: 200.00
+   *     specialLifPrice, // LifPrice (ether): 20
+   *     bookedBy         // Address: e.g. '0x39a...2b'
+   *   } = await lib.getReservation('0xab3..cd', new Date('5/31/2020'));
    */
-  async fetchReservation(unitAddress, day) {
+  async getReservation(unitAddress, day) {
+    day = util.formatDate(day);
     const unit = util.getInstance('HotelUnit', unitAddress, this.context);
-    return unit.methods.getReservation(day).call();
+    const result = await unit.methods.getReservation(day).call();
+
+    const specialPrice = util.bnToPrice(result[0]);
+    const specialLifPrice = util.lifWei2Lif(result[1], this.context);
+    const bookedBy = result[2];
+
+    return {
+      specialPrice: specialPrice,
+      specialLifPrice: specialLifPrice,
+      bookedBy: bookedBy
+    }
   }
 
   /**
-   * Sync gets hotel data previously retrieved by a `fetchHotels` call (see above)
+   * Gets the total real currency cost of booking for a range of days. Check-in is on the first day,
+   * check-out on the last.
+   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
+   * @param  {Addres}           unitAddress  Unit contract to edit
+   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * @param  {Date }            fromDate     check-in date
+   * @param  {Number}           amountDays   integer number of days to book.
+   * @return {Number}
+   * @example
+      const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
+   */
+  async getCost(unitAddress, fromDate, daysAmount){
+    const fromDay = util.formatDate(fromDate);
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const cost = await unit.methods.getCost(fromDay, daysAmount).call();
+    return util.bnToPrice(cost);
+  }
+
+  /**
+   * Gets the total real currency cost of booking for a range of days. Check-in is on the first day,
+   * check-out on the last.
+   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
+   * @param  {Addres}           unitAddress  Unit contract to edit
+   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * @param  {Date }            fromDate     check-in date
+   * @param  {Number}           amountDays   integer number of days to book.
+   * @return {Promievent}
+   * @example
+      const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
+   */
+  async getLifCost(unitAddress, fromDate, daysAmount){
+    const fromDay = util.formatDate(fromDate);
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const wei = await unit.methods.getLifCost(fromDay, daysAmount).call();
+
+    return util.lifWei2Lif(wei).toNumber();
+  }
+
+  /**
+   * Sync gets the hotel data previously retrieved by a `getHotel` call
    * @return {Object}
    * @example
    *   (we should have a doc link to JSON output here)
    */
-  getHotels() {
+  getCachedHotel(hotelAddress) {
+    return this.hotels[hotelAddress];
+  }
+
+  /**
+   * Sync gets hotel data previously retrieved by a `getHotels` call (see above)
+   * @return {Object}
+   * @example
+   *   (we should have a doc link to JSON output here)
+   */
+  getCachedHotels() {
     return this.hotels;
   }
 
   /**
-   * Sync gets the contract addresses of all hotels previously retrieved by a `fetchHotels` call
+   * Sync gets the contract addresses of all hotels previously retrieved by a `getHotels` call
    * @return {Array}
    * @example
    *  const [Hotel1, Hotel2] = lib.getHotelsAddrs();
    */
-  getHotelsAddrs() {
+  getCachedHotelsAddrs() {
     return this.hotelsAddrs;
-  }
-
-  /**
-   * Sync gets the hotel data previously retrieved by a `fetchHotel` call
-   * @return {Object}
-   * @example
-   *   (we should have a doc link to JSON output here)
-   */
-  getHotel(hotelAddress) {
-    return this.hotels[hotelAddress];
   }
 
   /**
@@ -405,25 +456,179 @@ class HotelManager {
   }
 
   /**
-   * Set a Unit contracts booking price for range of days. Check-in is on the first day,
-   * check-out on the last.
-   * @param  {Address} hotelAddress Hotel contract that controls the Unit contract to edit
-   * @param  {Addres}  unitAddress  Unit contract to edit
-   * @param  {String}  price        plaintext price: ex: '200 eur'
-   * @param  {Number}  fromDay      integer UTC day since 1-1-1970
-   * @param  {Number}  amountDays   integer number of days to book.
+   * Get the real currency booking price for range of days. Check-in is on
+   * the first day, check-out on the last.
+   * @param  {Address}  unitAddress  Unit contract to edit
+   * @param  {Date}    fromDate      check-in date
+   * @param  {Number}  amountDays    integer number of days to book.
    * @return {Promievent}
    */
-  async setUnitPrice(hotelAddress, unitAddress, price, fromDay, amountDays){
+  async getCost(unitAddress, fromDate, amountDays){
+    const fromDay = util.formatDate(fromDate);
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const cost = await unit.methods.getCost(fromDay, amountDays).call();
+    return util.bnToPrice(cost);
+  }
+
+  /**
+   * Get the Lif booking price for range of days. Check-in is on
+   * the first day, check-out on the last.
+   * @param  {Address}  unitAddress  Unit contract to edit
+   * @param  {Date}    fromDate      check-in date
+   * @param  {Number}  amountDays    integer number of days to book.
+   * @return {Promievent}
+   */
+  async getLifCost(unitAddress, fromDate, amountDays){
+    const fromDay = util.formatDate(fromDate);
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const cost = await unit.methods.getLifCost(fromDay, amountDays).call();
+    const lif = util.lifWei2Lif(cost, this.context)
+    return parseInt(lif);
+  }
+
+  /**
+   * Sets the default price for a unit
+   * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited
+   * @param {Address}   unitAddress   Unit contract to edit
+   * @param {Number}    price         Integer or floating point price
+   * @return {Promievent}
+   */
+  async setDefaultPrice(hotelAddress, unitAddress, price){
     const {
       hotel,
       index
     } = await util.getHotelAndIndex(hotelAddress, this.context);
 
+    const uintPrice = util.priceToUint(price);
     const unit = util.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
-      .setSpecialPrice(price, fromDay, amountDays)
+      .setDefaultPrice(uintPrice)
+      .encodeABI();
+
+    const hotelData = hotel.methods
+      .callUnit(unit.options.address, unitData)
+      .encodeABI();
+
+    await util.execute(hotelData, index, this.context);
+  }
+
+  /**
+   * Sets the default LifPrice for this unit
+   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
+   * @param  {Address}          unitAddress  Unit contract to edit
+   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * @return {Promievent}
+  */
+  async setDefaultLifPrice(hotelAddress, unitAddress, price){
+    const {
+      hotel,
+      index
+    } = await util.getHotelAndIndex(hotelAddress, this.context);
+
+    const weiPrice = util.lif2LifWei(price, this.context);
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+
+    const unitData = unit.methods
+      .setDefaultLifPrice(weiPrice)
+      .encodeABI();
+
+    const hotelData = hotel.methods
+      .callUnit(unit.options.address, unitData)
+      .encodeABI();
+
+    await util.execute(hotelData, index, this.context);
+  }
+
+  /**
+   * Changes the default currency code
+   * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited
+   * @param {Address}   unitAddress   Unit contract to edit
+   * @param {Number}    code          Integer currency code btw 0 and 255
+   * @param {Function}  converter     ex `euro = kroneToEuro(krone)`
+   * @param {Date}      convertStart  date to begin search of specialPrices
+   * @param {Date}      convertEnd    date (inclusive) to end search of specialPrices
+   * @return {Promievent}
+   */
+  async setCurrencyCode(hotelAddress, unitAddress, code, converter, convertStart, convertEnd){
+    const {
+      hotel,
+      index
+    } = await util.getHotelAndIndex(hotelAddress, this.context);
+
+    code = util.currencyCodeToHex(code, this.context);
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+
+    const unitData = unit.methods
+      .setCurrencyCode(code)
+      .encodeABI();
+
+    const hotelData = hotel.methods
+      .callUnit(unit.options.address, unitData)
+      .encodeABI();
+
+    await util.execute(hotelData, index, this.context);
+
+    // -------------------------------- NB ----------------------------------------
+    // We probably need to iterate through a range of dates and
+    // convert special prices from old to new denomination. We probably also need
+    // to estimate how many we can do at once.
+  }
+
+  /**
+   * Set a Unit contracts real currency booking price for range of days. Check-in is on
+   * the first day, check-out on the last.
+   * @param  {Address} hotelAddress Hotel contract that controls the Unit contract to edit
+   * @param  {Addres}  unitAddress  Unit contract to edit
+   * @param  {Number}  price        integer or floating point price
+   * @param  {Date}    fromDate     check-in date
+   * @param  {Number}  amountDays   integer number of days to book.
+   * @return {Promievent}
+   */
+  async setUnitSpecialPrice(hotelAddress, unitAddress, price, fromDate, amountDays){
+    const {
+      hotel,
+      index
+    } = await util.getHotelAndIndex(hotelAddress, this.context);
+
+    const fromDay = util.formatDate(fromDate);
+    const uintPrice = util.priceToUint(price);
+
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+
+    const unitData = unit.methods
+      .setSpecialPrice(uintPrice, fromDay, amountDays)
+      .encodeABI();
+
+    const hotelData = hotel.methods
+      .callUnit(unit.options.address, unitData)
+      .encodeABI();
+
+    return util.execute(hotelData, index, this.context);
+  }
+
+  /**
+   * Set a Unit contracts booking price for range of days. Check-in is on the first day,
+   * check-out on the last.
+   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
+   * @param  {Address}          unitAddress  Unit contract to edit
+   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * @param  {Date}             fromDate     check-in date
+   * @param  {Number}           amountDays   integer number of days to book.
+   * @return {Promievent}
+   */
+  async setUnitSpecialLifPrice(hotelAddress, unitAddress, price, fromDate, amountDays){
+    const {
+      hotel,
+      index
+    } = await util.getHotelAndIndex(hotelAddress, this.context);
+
+    const lifPrice = util.lif2LifWei(price, this.context);
+    const fromDay = util.formatDate(fromDate);
+    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+
+    const unitData = unit.methods
+      .setSpecialLifPrice(lifPrice, fromDay, amountDays)
       .encodeABI();
 
     const hotelData = hotel.methods

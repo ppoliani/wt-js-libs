@@ -38,18 +38,25 @@ const binaries = {
 
 // --------------------------- Constants / Converters / Type Helpers -------------------------------
 
+const zeroBytes8 = '0x0000000000000000';
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const zeroBytes32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
 
 // Returns the date from a single integer in format DD/MM/YYYY
 function parseDate(date){
   return moment([1970, 0, 1]).add(date, 'days').format('L');
 };
 
-  // Returns the date formated in a single integer
+// Returns the date formatted in days since 1970 0 1
 function formatDate(date){
-  moment(date).diff(moment([1970, 0, 1]), 'days');
+  return Math.round(new Date(date).getTime()/86400000);
 };
+
+
+function isZeroBytes8(val){
+  return val === zeroBytes8;
+}
 
 function isZeroBytes32(val){
   return val === zeroBytes32;
@@ -71,12 +78,29 @@ function isInvalidOpcodeEx(e) {
   return e.message.search('invalid opcode') >= 0;
 };
 
-function lifWei2Lif(value){
-  return web3.fromWei(value, 'ether');
+function currencyCodeToHex(code, context){
+  if (typeof code !== 'number')
+    throw new Error();
+
+  const hex = context.web3.utils.toHex(code);
+  return context.web3.utils.padLeft(hex, 16);
+}
+
+function priceToUint(price){
+  return price.toFixed(2) * 100;
+}
+
+function bnToPrice(uint){
+  uint = (typeof uint === 'Object') ? uint.toNumber() : uint;
+  return (uint/100).toFixed(2);
+}
+
+function lifWei2Lif(value, context){
+  return context.web3.utils.fromWei(value, 'ether');
 };
 
-function lif2LifWei(value){
-  return web3.toWei(value, 'ether');
+function lif2LifWei(value, context){
+  return context.web3.utils.toWei(value, 'ether');
 };
 
 function locationToUint(longitude, latitude){
@@ -168,7 +192,9 @@ module.exports = {
   parseDate: parseDate,
   formatDate: formatDate,
   zeroAddress: zeroAddress,
+  zeroBytes8: zeroBytes8,
   zeroBytes32: zeroBytes32,
+  isZeroBytes8: isZeroBytes8,
   isZeroBytes32: isZeroBytes32,
   isZeroAddress: isZeroAddress,
   isZeroString: isZeroString,
@@ -176,6 +202,9 @@ module.exports = {
   isInvalidOpcodeEx: isInvalidOpcodeEx,
   lifWei2Lif: lifWei2Lif,
   lif2LifWei: lif2LifWei,
+  currencyCodeToHex: currencyCodeToHex,
+  priceToUint: priceToUint,
+  bnToPrice: bnToPrice,
   bytes32ToString: bytes32ToString,
   locationToUint: locationToUint,
   locationFromUint: locationFromUint,
