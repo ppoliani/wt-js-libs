@@ -23,6 +23,9 @@ import "zeppelin-solidity/contracts/token/ERC20.sol";
  */
 contract Hotel is PrivateCall, Images {
 
+  bytes32 public version = bytes32("0.0.1-alpha");
+  bytes32 public contractType = bytes32("hotel");
+
   // Main information
   string public name;
   string public description;
@@ -45,6 +48,11 @@ contract Hotel is PrivateCall, Images {
   // Array of addresses of `Unit` contracts and mapping of their index position
   mapping(address => uint) public unitsIndex;
   address[] public units;
+
+  /**
+     @dev Event triggered on every booking
+  **/
+  event Book(address from, address unit, uint256 fromDay, uint256 daysAmount);
 
   /**
      @dev Constructor.
@@ -231,6 +239,7 @@ contract Hotel is PrivateCall, Images {
     require(unitsIndex[unitAddress] > 0);
     require(daysAmount > 0);
     require(Unit_Interface(unitAddress).book(from, fromDay, daysAmount));
+    Book(from, unitAddress, fromDay, daysAmount);
   }
 
   /**
@@ -252,6 +261,7 @@ contract Hotel is PrivateCall, Images {
     uint256 price = Unit_Interface(unitAddress).getLifCost(fromDay, daysAmount);
     require(Unit_Interface(unitAddress).book(from, fromDay, daysAmount));
     require(ERC20(Index_Interface(owner).LifToken()).transferFrom(from, this, price));
+    Book(from, unitAddress, fromDay, daysAmount);
   }
 
   /**

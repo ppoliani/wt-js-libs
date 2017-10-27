@@ -12,6 +12,9 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
  */
 contract Unit is Ownable {
 
+  bytes32 public version = bytes32("0.0.1-alpha");
+  bytes32 public contractType = bytes32("unit");
+
   // The type of the unit
   bytes32 public unitType;
 
@@ -37,11 +40,6 @@ contract Unit is Ownable {
     uint256 specialLifPrice;
     address bookedBy;
   }
-
-  /**
-     @dev Event triggered on every booking
-  **/
-  event Book(address from, uint256 fromDay, uint256 daysAmount);
 
   /**
      @dev Constructor. Creates the `Unit` contract with an active status
@@ -156,7 +154,6 @@ contract Unit is Ownable {
 
     for (i = fromDay; i < toDay ; i++)
       reservations[i].bookedBy = from;
-    Book(from, fromDay, daysAmount);
     return true;
   }
 
