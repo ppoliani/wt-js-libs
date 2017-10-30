@@ -10,7 +10,7 @@
     "test": "./scripts/test.sh",
     "test-build": "./node_modules/mocha/bin/mocha test -- test-build",
     "postinstall": "scripts/install.sh",
-    "recompile": "rm -rf build && ./node_modules/.bin/truffle compile",
+    "recompile": "rm -rf build && ./node_modules/.bin/truffle migrate --reset",
     "build": "webpack --config build.web.config.js && webpack --config build.node.config.js",
     "update-submodules": "git submodule update --recursive && npm run postinstall",
     "pull-submodules": "git submodule foreach git pull origin master && npm run postinstall"

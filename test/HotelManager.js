@@ -1,5 +1,3 @@
-'use strict';
-
 const assert = require('chai').assert;
 const util = require('../libs/util/index');
 const _ = require('lodash');
@@ -362,30 +360,6 @@ describe('HotelManager', function() {
         assert(false);
       } catch(e){}
     });
-
-    it('getCost: gets the total cost for a booking over a range of days', async () => {
-      const fromDate = new Date('10/10/2020');
-      const daysAmount = 5;
-      const price = 100.00;
-      const expectedCost = price * daysAmount;
-
-      await lib.setDefaultPrice(hotelAddress, unitAddress, price);
-      const actualCost = await lib.getCost(unitAddress, fromDate, daysAmount);
-
-      assert.equal(expectedCost, actualCost);
-    })
-
-    it('getLifCost: gets the total cost for a booking over a range of days', async () => {
-      const fromDate = new Date('10/10/2020');
-      const daysAmount = 5;
-      const price = 20;
-      const expectedCost = price * daysAmount;
-
-      await lib.setDefaultLifPrice(hotelAddress, unitAddress, price);
-      const actualCost = await lib.getLifCost(unitAddress, fromDate, daysAmount);
-
-      assert.equal(expectedCost, actualCost);
-    })
   });
 });
 
