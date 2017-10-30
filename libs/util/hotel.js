@@ -25,7 +25,6 @@ const {
  * @return {Promievent}
  */
 async function execute(data, index, context, gas){
-
   const callData = await context.WTIndex.methods
     .callHotel(index, data)
     .encodeABI();

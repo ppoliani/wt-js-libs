@@ -59,8 +59,9 @@ class User {
       guestData
     );
 
+    const weiCost = util.lif2LifWei(cost, this.context);
     const approvalData = await this.token.methods
-      .approveData(hotelAddress, cost, bookData)
+      .approveData(hotelAddress, weiCost, bookData)
       .encodeABI();
 
     const options = {

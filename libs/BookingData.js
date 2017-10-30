@@ -70,6 +70,7 @@ class BookingData {
     if (!isActive) return false;
 
     for (let day of range) {
+
       const {
         specialPrice,
         specialLifPrice,

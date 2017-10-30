@@ -60,8 +60,8 @@ class HotelManager {
   /**
    * Async receives information about bookings for a specific unit
    * on a specific date.
-   * @param  {Address} unitAddress contract address of Unit
-   * @param  {Date}    day         date to get info for
+   * @param  {Address}        unitAddress contract address of Unit
+   * @param  {Date | Number}  day         Date | UTC day since 1970 to get info for
    * @return {Promievent}
    * @example
    *   const {
@@ -71,7 +71,10 @@ class HotelManager {
    *   } = await lib.getReservation('0xab3..cd', new Date('5/31/2020'));
    */
   async getReservation(unitAddress, day) {
-    day = util.formatDate(day);
+
+    if (day instanceof Date)
+      day = util.formatDate(day);
+
     const unit = util.getInstance('HotelUnit', unitAddress, this.context);
     const result = await unit.methods.getReservation(day).call();
 

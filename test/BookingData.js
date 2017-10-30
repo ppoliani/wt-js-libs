@@ -86,34 +86,6 @@ describe('BookingData', function() {
     })
   });
 
-  describe.skip('unitIsAvailable', function() {
-    before( async () => {
-      token = await help.runTokenGenerationEvent();
-
-      const fundingOptions = {
-        token: token,
-        sender: fundingSource,
-        receiver: augusto,
-        value: 500,
-        web3: web3
-      }
-
-      await help.sendTokens(fundingOptions);
-    });
-
-    it('returns true if unit is available for a range of days', async () => {
-
-    });
-
-    it('returns false if unit has been booked for any day in a range of days', async () => {
-
-    });
-
-    it('returns false if the units active status is false', async () => {
-
-    });
-  });
-
   describe.skip('getBookings', function() {
 
     it('gets bookings for a hotel', async() => {

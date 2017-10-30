@@ -101,13 +101,8 @@ describe('User', function(){
   describe('bookWithLif: success cases', function () {
     const fromDate = new Date('10/10/2020');
     const daysAmount = 5;
-    const price = 20;
+    const price = 1;
     const guestData = web3.utils.toHex('guestData');
-    const expectedCost = price * daysAmount;
-
-    let user;
-    let data;
-    let hotel;
 
     beforeEach(async function() {
       ({
@@ -126,7 +121,8 @@ describe('User', function(){
       user = new User(userOptions);
       data = new BookingData(web3);
       hotel = util.getInstance('Hotel', hotelAddress, {web3: web3});
-      //await Manager.setDefaultLifPrice(hotelAddress, unitAddress, price);
+
+      await Manager.setDefaultLifPrice(hotelAddress, unitAddress, price);
     });
 
     it('should make a booking: event fired', async () => {
@@ -146,10 +142,8 @@ describe('User', function(){
       assert.equal(book.daysAmount, daysAmount);
     });
 
-    it.skip('should make a booking: days reserved', async () => {
-
+    it('should make a booking: days reserved', async () => {
       let isAvailable = await data.unitIsAvailable(unitAddress, fromDate, daysAmount);
-
       assert.isTrue(isAvailable);
 
       await user.bookWithLif(
@@ -164,22 +158,103 @@ describe('User', function(){
       assert.isFalse(isAvailable);
     });
 
-    it.skip('should make a booking: tokens transferred', async () => {
+    it('should make a booking: tokens transferred', async () => {
+      let augustoInitialBalance = await token.methods.balanceOf(augusto).call();
+      let hotelInitialBalance = await token.methods.balanceOf(hotelAddress).call();
+      let lifWeiCost = util.lif2LifWei(price * daysAmount, {web3: web3});
 
+      augustoInitialBalance =  new web3.utils.BN(augustoInitialBalance);
+      hotelInitialBalance = new web3.utils.BN(hotelInitialBalance);
+      lifWeiCost = new web3.utils.BN(lifWeiCost);
+
+      await user.bookWithLif(
+        hotelAddress,
+        unitAddress,
+        fromDate,
+        daysAmount,
+        guestData
+      );
+
+      let augustoFinalBalance = await token.methods.balanceOf(augusto).call();
+      let hotelFinalBalance = await token.methods.balanceOf(hotelAddress).call();
+
+      augustoFinalBalance = new web3.utils.BN(augustoFinalBalance);
+      hotelFinalBalance = new web3.utils.BN(hotelFinalBalance);
+
+      const augustoExpectedBalance = augustoInitialBalance.sub(lifWeiCost);
+      const hotelExpectedBalance = hotelInitialBalance.add(lifWeiCost);
+
+      assert(augustoExpectedBalance.eq(augustoFinalBalance));
+      assert(hotelExpectedBalance.eq(hotelFinalBalance));
     });
-  });
 
-  describe.skip('bookWithLif: error cases', function () {
-    it('should reject if the room is not available for the range of dates', async () => {
+    it('should reject if the Unit has already been booked for the range of dates', async () => {
+      const firstDate = new Date('10/10/2020');
+      const secondDate = new Date('10/11/2020');
 
+      const args = [
+        hotelAddress,
+        unitAddress,
+        firstDate,
+        daysAmount,
+        guestData
+      ];
+
+      await user.bookWithLif(...args)
+      args[2] = secondDate;
+
+      try {
+        await user.bookWithLif(...args);
+        assert(false);
+      } catch (e) {
+        assert.isDefined(e);
+      }
+    });
+
+    it('should reject if the Units active status is false', async () => {
+      const firstDate = new Date('10/10/2020');
+      const secondDate = new Date('10/10/2021'); // Different year
+
+      const args = [
+        hotelAddress,
+        unitAddress,
+        firstDate,
+        daysAmount,
+        guestData
+      ];
+
+      await user.bookWithLif(...args)
+      await Manager.setUnitActive(hotelAddress, unitAddress, false);
+      args[2] = secondDate;
+
+      try {
+        await user.bookWithLif(...args);
+        assert(false);
+      } catch (e) {
+        assert.isDefined(e);
+      }
     });
 
     it('should reject if the users balance is insufficient', async () => {
+      // Augusto's total balance is set to 500 in the before();
+      // Total price for this booking will be 2500;
+      const newPrice = 500;
+      await Manager.setDefaultLifPrice(hotelAddress, unitAddress, newPrice);
 
-    });
+      const args = [
+        hotelAddress,
+        unitAddress,
+        fromDate,
+        daysAmount,
+        guestData
+      ];
 
-    it('should not transfer tokens', async () => {
-
+      try {
+        await user.bookWithLif(...args);
+        assert(false);
+      } catch (e) {
+        assert.isDefined(e);
+      }
     });
   });
 });
