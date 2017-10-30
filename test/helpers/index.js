@@ -6,6 +6,8 @@ const hotel = require('./hotel');
 module.exports = {
   sendTokens: misc.sendTokens,
 
+  increaseTimeTestRPC: token.increaseTimeTestRPC,
+  increaseTimeTestRPCTo: token.increaseTimeTestRpcTo,
   simulateCrowdsale: token.simulateCrowdsale,
   runTokenGenerationEvent: token.runTokenGenerationEvent,
 

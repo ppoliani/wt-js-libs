@@ -1,5 +1,6 @@
 const _ = require('lodash');
-const util = require('./misc.js');
+const util = require('./../../libs/util/index');
+const help = require('./misc.js');
 const HotelManager = require('./../../libs/HotelManager');
 
 /**
@@ -22,8 +23,8 @@ async function generateCompleteHotel(
   gasMargin,
   web3
 ){
-  const hotelName = util.randomString(10);
-  const hotelDescription = util.randomString(15);
+  const hotelName = help.randomString(10);
+  const hotelDescription = help.randomString(15);
   const typeName = 'BASIC_ROOM';
 
   const lib = new HotelManager({
@@ -35,6 +36,7 @@ async function generateCompleteHotel(
 
   await lib.createHotel(hotelName, hotelDescription);
   const hotels = await lib.getHotels();
+
   const hotelsArray = Object.keys(hotels);
   const latest = hotelsArray.length - 1;
   hotelAddress = hotelsArray[latest];

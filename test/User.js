@@ -49,9 +49,18 @@ describe('User', function(){
 
     token = await help.runTokenGenerationEvent();
 
-    await index.methods
+    const setLifData = await index.methods
       .setLifToken(token.options.address)
-      .send({from: daoAccount, gas: defaultGas});
+      .encodeABI();
+
+    const setLifOptions = {
+      from: daoAccount,
+      to: index.options.address,
+      gas: defaultGas,
+      data: setLifData
+    };
+
+    await web3.eth.sendTransaction(setLifOptions);
 
     tokenFundingOptions = {
       token: token,

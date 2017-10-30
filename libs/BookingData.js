@@ -88,15 +88,49 @@ class BookingData {
    * @param  {Address | Array} _addresses  Hotel contract address(es) to fetch bookings for
    * @param  {Number}          startBlock  Optional: block to begin searching from.
    * @return {Promise}                     Array of bookings objects
+   * @example
+   * [
+   *   {
+   *     "transactionHash": "0x0ed3a16220e3b0cab35c25574b618a02130fe6ab8225ed0b6bad6ffc9640694d",
+   *     "blockNumber": 25,
+   *     "id": "log_f72920af",
+   *     "from": "0xc9F805a42837E78D5566f6A04Dba7167F8c6A830",
+   *     "unit": "0xcE85f98D04B25deaa27406492B6d6B747B837741",
+   *     "fromDate": "2020-10-10T07:00:00.000Z",
+   *     "daysAmount": "5"
+   *    }
+   * ]
    */
-  async getBookings(_addresses, fromBlock){
-    let addresses = [];
+  async getBookings(_addresses, fromBlock=0){
+    let hotelsToQuery = [];
+    let bookings = [];
 
-    (Array.isArray(addresses))
-      ? addresses = _addresses
-      : addresses.push(address);
+    (Array.isArray(_addresses))
+      ? hotelsToQuery = _addresses
+      : hotelsToQuery.push(_addresses);
 
-  }
+    if (!hotelsToQuery.length) return [];
+
+    let events;
+    for (let address of hotelsToQuery){
+      const hotel = util.getInstance('Hotel', address, this.context);
+
+      events = await hotel.getPastEvents('Book', {
+        fromBlock: fromBlock
+      });
+
+      events.forEach(event => bookings.push({
+        transactionHash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        id: event.id,
+        from: event.returnValues.from,
+        unit: event.returnValues.unit,
+        fromDate: util.parseDate(event.returnValues.fromDay),
+        daysAmount: event.returnValues.daysAmount
+      }));
+    }
+    return bookings;
+  };
 
   /**
    * Async retrieves the outstanding bookings requests associated a hotel address or addresses.
@@ -107,13 +141,23 @@ class BookingData {
    * @param  {Address | Array} _addresses  Hotel contract address(es) to fetch bookings for
    * @param  {Number}          startBlock  Optional: block to begin searching from.
    * @return {Promise}         Array of bookings objects
+   *
    */
   async getBookingRequests(_addresses, fromBlock){
-    let addresses = [];
+    let hotelsToQuery = [];
+    let bookings = [];
 
-    (Array.isArray(addresses))
-      ? addresses = _addresses
-      : addresses.push(address);
+    (Array.isArray(_addresses))
+      ? hotelsToQuery = _addresses
+      : hotelsToQuery.push(_addresses);
+
+    if (!hotelsToQuery.length) return [];
+
+    let events;
+    for (let address of hotelsToQuery){
+      const hotel = util.getInstance('Hotel', address, this.context);
+      events = await hotel.getPastEvents('Book');
+    }
   }
 }
 

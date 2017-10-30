@@ -157,6 +157,8 @@ async function increaseTimeTestRPCTo(target) {
 }
 
 module.exports = {
+  increaseTimeTestRPC: increaseTimeTestRPC,
+  increaseTimeTestRPCTo: increaseTimeTestRPCTo,
   runTokenGenerationEvent: runTokenGenerationEvent,
   simulateCrowdsale: simulateCrowdsale
 }
