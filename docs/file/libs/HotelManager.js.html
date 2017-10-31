@@ -1,11 +1,53 @@
-const util = require('./util/index.js');
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../">
+  <title data-ice="title">libs/HotelManager.js | WindingTree Hotels Javascript Library</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<meta name="description" content="A JS interface to WindingTree&apos;s Ethereum smart-contracts for hotels"><meta property="twitter:card" content="summary"><meta property="twitter:title" content="WindingTree Hotels Javascript Library"><meta property="twitter:description" content="A JS interface to WindingTree&apos;s Ethereum smart-contracts for hotels"></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./" style="display: flex; align-items: center;"><img src="./image/brand_logo.png" style="width:34px;"></a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/windingtree/wt-js-libs"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/BookingData.js~BookingData.html">BookingData</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/HotelManager.js~HotelManager.html">HotelManager</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/User.js~User.html">User</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-WTKey">WTKey</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-WTUser">WTUser</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-WTWallet">WTWallet</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">libs/HotelManager.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">const util = require(&apos;./util/index.js&apos;);
 
 /**
  * Methods that allow a manager to create / administrate hotels
  * @example
  *   const hotel = new HotelManager({
- *     indexAddress: '0x75a3...b', // Address of the WTIndex contract that lists this hotel
- *     owner: '0xab3...cd',        // Payer of lib tx fees, registered as owner the WTIndex
+ *     indexAddress: &apos;0x75a3...b&apos;, // Address of the WTIndex contract that lists this hotel
+ *     owner: &apos;0xab3...cd&apos;,        // Payer of lib tx fees, registered as owner the WTIndex
  *     web3: web3,                 // Instantiated web3 object with its provider set.
  *   });
  */
@@ -24,7 +66,7 @@ class HotelManager {
     this.web3 = options.web3 || {};
     this.context = options;
 
-    this.WTIndex = util.getInstance('WTIndex', options.indexAddress, this.context);
+    this.WTIndex = util.getInstance(&apos;WTIndex&apos;, options.indexAddress, this.context);
 
     this.context.WTIndex = this.WTIndex;
     this.context.gasMargin = options.gasMargin || 1;
@@ -39,7 +81,7 @@ class HotelManager {
    *  (we should have a doc link to JSON output here)
    */
   async getHotel(hotelAddress){
-    const hotel = util.getInstance('Hotel', hotelAddress, this.context);
+    const hotel = util.getInstance(&apos;Hotel&apos;, hotelAddress, this.context);
     this.hotels[hotelAddress] = await util.getHotelInfo(hotel, this.context);
     return this.hotels[hotelAddress];
   }
@@ -65,7 +107,7 @@ class HotelManager {
   }
 
   /**
-   * Gets a unit's reservation data for a specific UTC day or date.
+   * Gets a unit&apos;s reservation data for a specific UTC day or date.
    * @param  {Address}        unitAddress contract address of Unit
    * @param  {Date | Number}  day         Date | UTC day since 1970
    * @return {Promievent}
@@ -73,14 +115,14 @@ class HotelManager {
    *   const {
    *     specialPrice,    // Price: 200.00
    *     specialLifPrice, // LifPrice (ether): 20
-   *     bookedBy         // Address: e.g. '0x39a...2b'
-   *   } = await lib.getReservation('0xab3..cd', new Date('5/31/2020'));
+   *     bookedBy         // Address: e.g. &apos;0x39a...2b&apos;
+   *   } = await lib.getReservation(&apos;0xab3..cd&apos;, new Date(&apos;5/31/2020&apos;));
    */
   async getReservation(unitAddress, day) {
     if (day instanceof Date)
       day = util.formatDate(day);
 
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
     const result = await unit.methods.getReservation(day).call();
 
     const specialPrice = util.bnToPrice(result[0]);
@@ -125,7 +167,7 @@ class HotelManager {
   }
 
   /**
-   * Sets the Hotel class's web3 instance.
+   * Sets the Hotel class&apos;s web3 instance.
    * @param {Object} _web3 Web3 instance, already instantiated with a provider
    */
   setWeb3(_web3){
@@ -134,7 +176,7 @@ class HotelManager {
   }
 
   /**
-   * Creates a Hotel contract instance and registers it with the HotelManager's WTIndex contract
+   * Creates a Hotel contract instance and registers it with the HotelManager&apos;s WTIndex contract
    * @param  {String} name         name
    * @param  {String} description  description
    * @return {Promievent}
@@ -179,7 +221,7 @@ class HotelManager {
   }
 
   /**
-   * Edits a hotel's name and description.
+   * Edits a hotel&apos;s name and description.
    * @param  {Address} hotelAddress contract address
    * @param  {String}  name         hotel name
    * @param  {String}  description  hotel description
@@ -199,7 +241,7 @@ class HotelManager {
   }
 
   /**
-   * Edits a hotel's physical address data.
+   * Edits a hotel&apos;s physical address data.
    * @param  {Address} hotelAddress contract address
    * @param  {String} lineOne       physical address data
    * @param  {String} lineTwo       physical address data
@@ -221,7 +263,7 @@ class HotelManager {
   }
 
   /**
-   * Edits a hotel's coordinate location and timezone data.
+   * Edits a hotel&apos;s coordinate location and timezone data.
    * @param  {Address} hotelAddress contract address
    * @param  {Number} timezone      positive integer timezone relative to GMT
    * @param  {Number} latitude      GPS latitude location data e.g `-3.703578`
@@ -266,7 +308,7 @@ class HotelManager {
   /**
    * Deploys a UnitType contract and registers it to an existing Hotel contract
    * @param  {Address} hotelAddress Hotel contract that will control created UnitType contract
-   * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
+   * @param  {String} unitType      unique plain text id of UnitType, ex: &apos;BASIC_ROOM&apos;
    * @return {Promievent}
    */
   async addUnitType(hotelAddress, unitType){
@@ -287,7 +329,7 @@ class HotelManager {
   /**
    * Unregisters a UnitType contract from an existing Hotel contract
    * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to remove
-   * @param  {String}  unitType     unique plain text id of UnitType, ex: 'BASIC_ROOM'
+   * @param  {String}  unitType     unique plain text id of UnitType, ex: &apos;BASIC_ROOM&apos;
    * @return {Promievent}
    */
   async removeUnitType(hotelAddress, unitType){
@@ -303,17 +345,17 @@ class HotelManager {
       .removeUnitType(typeHex, typeIndex)
       .encodeABI();
 
-    return util.execute(data, index, this.context, 400000); //<- testrpc bug estimating deletions?
+    return util.execute(data, index, this.context, 400000); //&lt;- testrpc bug estimating deletions?
   }
 
   /**
-   * Edits a unit type's basic info data.
+   * Edits a unit type&apos;s basic info data.
    * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
-   * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
-   * @param  {String} description   description: e.g. 'Simple. Clean.'
+   * @param  {String} unitType      unique plain text id of UnitType, ex: &apos;BASIC_ROOM&apos;
+   * @param  {String} description   description: e.g. &apos;Simple. Clean.&apos;
    * @param  {Number} minGuests     minimum number of guests that can stay in UnitType
    * @param  {Number} maxGuests     maximum number of guests that can stay in UnitType
-   * @param  {String} price         price of UnitType: e.g '50 euros'
+   * @param  {String} price         price of UnitType: e.g &apos;50 euros&apos;
    * @return {Promievent}
    */
   async editUnitType(hotelAddress, unitType, description, minGuests, maxGuests, price){
@@ -324,7 +366,7 @@ class HotelManager {
 
     const typeHex = this.web3.utils.toHex(unitType);
     const address = await hotel.methods.getUnitType(typeHex).call();
-    const instance = util.getInstance('HotelUnitType', address, this.context);
+    const instance = util.getInstance(&apos;HotelUnitType&apos;, address, this.context);
 
     const editData = instance.methods
       .edit(description, minGuests, maxGuests, price)
@@ -340,7 +382,7 @@ class HotelManager {
   /**
    * Adds an amenity to a unit type
    * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
-   * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
+   * @param  {String} unitType      unique plain text id of UnitType, ex: &apos;BASIC_ROOM&apos;
    * @param  {Number} amenity       integer code of amenity to add: ex: 23
    * @return {Promievent}
    */
@@ -352,7 +394,7 @@ class HotelManager {
 
     const typeHex = this.web3.utils.toHex(unitType);
     const address = await hotel.methods.getUnitType(typeHex).call();
-    const instance = util.getInstance('HotelUnitType', address, this.context);
+    const instance = util.getInstance(&apos;HotelUnitType&apos;, address, this.context);
 
     const amenityData = instance.methods
       .addAmenity(amenity)
@@ -368,7 +410,7 @@ class HotelManager {
   /**
    * Removes an amenity from a unit type.
    * @param  {Address} hotelAddress   Hotel contract that controls the UnitType contract to edit
-   * @param  {String}  unitType       unique plain text id of UnitType, ex: 'BASIC_ROOM'
+   * @param  {String}  unitType       unique plain text id of UnitType, ex: &apos;BASIC_ROOM&apos;
    * @param  {Number}  amenity        integer code of amenity to remove: ex: 23
    * @return {Promievent}
    */
@@ -380,7 +422,7 @@ class HotelManager {
 
     const typeHex = this.web3.utils.toHex(unitType);
     const address = await hotel.methods.getUnitType(typeHex).call();
-    const instance = util.getInstance('HotelUnitType', address, this.context);
+    const instance = util.getInstance(&apos;HotelUnitType&apos;, address, this.context);
 
     const amenityData = instance.methods
       .removeAmenity(amenity)
@@ -396,7 +438,7 @@ class HotelManager {
   /**
    * Deploys a Unit contract and registers it to an existing Hotel contract
    * @param {Address} hotelAddress  Hotel contract that will control created Unit contract
-   * @param {String}  unitType      unique plain text id of this units UnitType, ex: 'BASIC_ROOM'
+   * @param {String}  unitType      unique plain text id of this units UnitType, ex: &apos;BASIC_ROOM&apos;
    * @return {Promievent}
    */
   async addUnit(hotelAddress, unitType){
@@ -445,7 +487,7 @@ class HotelManager {
       index
     } = await util.getHotelAndIndex(hotelAddress, this.context);
 
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
 
     const unitData = unit.methods
       .setActive(active)
@@ -472,7 +514,7 @@ class HotelManager {
     } = await util.getHotelAndIndex(hotelAddress, this.context);
 
     const uintPrice = util.priceToUint(price);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
 
     const unitData = unit.methods
       .setDefaultPrice(uintPrice)
@@ -489,7 +531,7 @@ class HotelManager {
    * Sets the default LifPrice for this unit
    * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
    * @param  {Address}          unitAddress  Unit contract to edit
-   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * @param  {String|Number|BN} price        Lif &apos;ether&apos; (converted to wei by web3.utils.toWei)
    * @return {Promievent}
   */
   async setDefaultLifPrice(hotelAddress, unitAddress, price){
@@ -499,7 +541,7 @@ class HotelManager {
     } = await util.getHotelAndIndex(hotelAddress, this.context);
 
     const weiPrice = util.lif2LifWei(price, this.context);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
 
     const unitData = unit.methods
       .setDefaultLifPrice(weiPrice)
@@ -529,7 +571,7 @@ class HotelManager {
     } = await util.getHotelAndIndex(hotelAddress, this.context);
 
     code = util.currencyCodeToHex(code, this.context);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
 
     const unitData = unit.methods
       .setCurrencyCode(code)
@@ -548,7 +590,7 @@ class HotelManager {
   }
 
   /**
-   * Sets a unit's national currency booking price for range of days. Check-in is on
+   * Sets a unit&apos;s national currency booking price for range of days. Check-in is on
    * the first day, check-out on the last.
    * @param  {Address} hotelAddress Hotel contract that controls the Unit contract to edit
    * @param  {Addres}  unitAddress  Unit contract to edit
@@ -566,7 +608,7 @@ class HotelManager {
     const fromDay = util.formatDate(fromDate);
     const uintPrice = util.priceToUint(price);
 
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
 
     const unitData = unit.methods
       .setSpecialPrice(uintPrice, fromDay, amountDays)
@@ -580,11 +622,11 @@ class HotelManager {
   }
 
   /**
-   * Sets a unit's booking price for range of days. Check-in is on the first day,
+   * Sets a unit&apos;s booking price for range of days. Check-in is on the first day,
    * check-out on the last.
    * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
    * @param  {Address}          unitAddress  Unit contract to edit
-   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * @param  {String|Number|BN} price        Lif &apos;ether&apos; (converted to wei by web3.utils.toWei)
    * @param  {Date}             fromDate     check-in date
    * @param  {Number}           amountDays   integer number of days to book.
    * @return {Promievent}
@@ -597,7 +639,7 @@ class HotelManager {
 
     const lifPrice = util.lif2LifWei(price, this.context);
     const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
 
     const unitData = unit.methods
       .setSpecialLifPrice(lifPrice, fromDay, amountDays)
@@ -612,3 +654,20 @@ class HotelManager {
 };
 
 module.exports = HotelManager;
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.3)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

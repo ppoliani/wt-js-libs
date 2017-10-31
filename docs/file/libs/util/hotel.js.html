@@ -1,4 +1,46 @@
-const {
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <base data-ice="baseUrl" href="../../../">
+  <title data-ice="title">libs/util/hotel.js | WindingTree Hotels Javascript Library</title>
+  <link type="text/css" rel="stylesheet" href="css/style.css">
+  <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
+  <script src="script/prettify/prettify.js"></script>
+  <script src="script/manual.js"></script>
+<meta name="description" content="A JS interface to WindingTree&apos;s Ethereum smart-contracts for hotels"><meta property="twitter:card" content="summary"><meta property="twitter:title" content="WindingTree Hotels Javascript Library"><meta property="twitter:description" content="A JS interface to WindingTree&apos;s Ethereum smart-contracts for hotels"></head>
+<body class="layout-container" data-ice="rootContainer">
+
+<header>
+  <a href="./" style="display: flex; align-items: center;"><img src="./image/brand_logo.png" style="width:34px;"></a>
+  
+  <a href="identifiers.html">Reference</a>
+  <a href="source.html">Source</a>
+  
+  <div class="search-box">
+  <span>
+    <img src="./image/search.png">
+    <span class="search-input-edge"></span><input class="search-input"><span class="search-input-edge"></span>
+  </span>
+    <ul class="search-result"></ul>
+  </div>
+<a style="position:relative; top:3px;" href="https://github.com/windingtree/wt-js-libs"><img width="20px" src="./image/github.png"></a></header>
+
+<nav class="navigation" data-ice="nav"><div>
+  <ul>
+    
+  <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/BookingData.js~BookingData.html">BookingData</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/HotelManager.js~HotelManager.html">HotelManager</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/User.js~User.html">User</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-WTKey">WTKey</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-WTUser">WTUser</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-function">F</span><span data-ice="name"><span><a href="function/index.html#static-function-WTWallet">WTWallet</a></span></span></li>
+</ul>
+</div>
+</nav>
+
+<div class="content" data-ice="content"><h1 data-ice="title">libs/util/hotel.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">const {
   abis,
   binaries,
   getInstance,
@@ -14,7 +56,7 @@ const {
   addGasMargin,
   jsArrayFromSolidityArray,
   pretty,
-} = require('./misc')
+} = require(&apos;./misc&apos;)
 
 
 /**
@@ -44,47 +86,47 @@ async function execute(data, index, context, gas){
 
 /**
  * Deploys an Index contract that functions as a registry and transaction entry
- * point for the contract system's Hotels.
- * system's Hotels
+ * point for the contract system&apos;s Hotels.
+ * system&apos;s Hotels
  * @param  {Object}  context  ex: context.web3 / context.owner
  * @return {Instance}         WTIndex instance
  */
 async function deployIndex(context){
-  const abi = abis['WTIndex'];
+  const abi = abis[&apos;WTIndex&apos;];
   const instance = new context.web3.eth.Contract(abi);
 
   const deployOptions = {
-    data: binaries['WTIndex'],
+    data: binaries[&apos;WTIndex&apos;],
     arguments: []
   };
 
   const tx = await deployContract(instance, deployOptions, context);
-  return getInstance('WTIndex', tx.contractAddress, context);
+  return getInstance(&apos;WTIndex&apos;, tx.contractAddress, context);
 }
 
 /**
- * Deploys a Unit contract which will subsequently be added to a Hotel's list of units
- * @param  {String}  unitType     name of this unit's UnitType, ex: `BASIC_ROOM`
+ * Deploys a Unit contract which will subsequently be added to a Hotel&apos;s list of units
+ * @param  {String}  unitType     name of this unit&apos;s UnitType, ex: `BASIC_ROOM`
  * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
  * @param  {Object}  context      ex: context.web3 / context.owner
  * @return {Promievent}           web3 deployment result
  */
 async function deployUnit(unitType, hotelAddress, context){
   const typeHex = context.web3.utils.toHex(unitType);
-  const abi = abis['HotelUnit'];
+  const abi = abis[&apos;HotelUnit&apos;];
   const instance = new context.web3.eth.Contract(abi);
 
   const deployOptions = {
-    data: binaries['HotelUnit'],
+    data: binaries[&apos;HotelUnit&apos;],
     arguments: [hotelAddress, typeHex]
   };
 
   const tx = await deployContract(instance, deployOptions, context);
-  return getInstance('HotelUnitType', tx.contractAddress, context);
+  return getInstance(&apos;HotelUnitType&apos;, tx.contractAddress, context);
 }
 
 /**
- * Deploys a UnitType contract which will subsequently be added to a Hotel's list of unit types
+ * Deploys a UnitType contract which will subsequently be added to a Hotel&apos;s list of unit types
  * @param  {String}  unitType     name of UnitType, ex: `BASIC_ROOM`
  * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
  * @param  {Object}  context      ex: context.web3 / context.owner
@@ -92,16 +134,16 @@ async function deployUnit(unitType, hotelAddress, context){
  */
 async function deployUnitType(unitType, hotelAddress, context){
   const typeHex = context.web3.utils.toHex(unitType);
-  const abi = abis['HotelUnitType'];
+  const abi = abis[&apos;HotelUnitType&apos;];
   const instance = await new context.web3.eth.Contract(abi);
 
   const deployOptions = {
-    data: binaries['HotelUnitType'],
+    data: binaries[&apos;HotelUnitType&apos;],
     arguments: [hotelAddress, typeHex]
   };
 
   const tx = await deployContract(instance, deployOptions, context);
-  return getInstance('HotelUnitType', tx.contractAddress, context);
+  return getInstance(&apos;HotelUnitType&apos;, tx.contractAddress, context);
 }
 
 /**
@@ -130,7 +172,7 @@ async function deployContract(instance, deployOptions, context){
 /**
  * Async method that gets the index of a unit type the user intends to remove
  * @param  {Instance} hotel    Hotel
- * @param  {String}   unitType ex: 'BASIC_ROOM'
+ * @param  {String}   unitType ex: &apos;BASIC_ROOM&apos;
  * @param  {Object}   context  ex: context.web3
  * @return {Number}
  */
@@ -144,8 +186,8 @@ async function getUnitTypeIndex(hotel, unitType, context){
 /**
  * Async method that gets a hotel instance and its index number in the WTIndex parent contract
  * @param  {Address}  address  contract address of Hotel instance
- * @param  {Object}   context  {WTIndex: <Instance>, owner: <address>, web3: <web3>}
- * @return {Promise}  { hotel: <instance>, index: <number> }
+ * @param  {Object}   context  {WTIndex: &lt;Instance&gt;, owner: &lt;address&gt;, web3: &lt;web3&gt;}
+ * @return {Promise}  { hotel: &lt;instance&gt;, index: &lt;number&gt; }
  */
 async function getHotelAndIndex(address, context){
   const methods = context.WTIndex.methods;
@@ -153,7 +195,7 @@ async function getHotelAndIndex(address, context){
 
   const addresses = await methods.getHotelsByManager(owner).call();
   const index = await addresses.indexOf(address);
-  const hotel = getInstance('Hotel', address, context);
+  const hotel = getInstance(&apos;Hotel&apos;, address, context);
   return {
     hotel: hotel,
     index: index
@@ -163,22 +205,22 @@ async function getHotelAndIndex(address, context){
 /**
  * Async method which gets all info associated with hotel, its unit types and units. Zero
  * elements in the solidity arrays are filtered out and data types are converted from
- * their solidity form to JS, i.e. bytes32 --> utf8.
+ * their solidity form to JS, i.e. bytes32 --&gt; utf8.
  * @param  {Instance} wtHotel   Hotel contract instance
- * @param  {Object}   context   `{WTIndex: <Instance>, owner: <address>, web3: <web3>}`
+ * @param  {Object}   context   `{WTIndex: &lt;Instance&gt;, owner: &lt;address&gt;, web3: &lt;web3&gt;}`
  * @return {Object}   data
  */
 async function getHotelInfo(wtHotel, context){
 
-  // UnitTypes & Amenities
+  // UnitTypes &amp; Amenities
   const unitTypes = {};
   let unitTypeNames = await wtHotel.methods.getUnitTypeNames().call();
-  unitTypeNames = unitTypeNames.filter(name => !isZeroBytes32(name))
+  unitTypeNames = unitTypeNames.filter(name =&gt; !isZeroBytes32(name))
 
   if (unitTypeNames.length){
     for (let typeName of unitTypeNames){
       const unitType = await wtHotel.methods.getUnitType(typeName).call();
-      const instance = getInstance('HotelUnitType', unitType, context);
+      const instance = getInstance(&apos;HotelUnitType&apos;, unitType, context);
 
       const name = context.web3.utils.toUtf8(typeName);
       unitTypes[name] = {};
@@ -186,8 +228,8 @@ async function getHotelInfo(wtHotel, context){
 
       // UnitType Amenities
       const amenities = await instance.methods.getAmenities().call();
-      unitTypes[name].amenities = amenities.filter(item => !isZeroUint(item))
-                                           .map(item => parseInt(item));
+      unitTypes[name].amenities = amenities.filter(item =&gt; !isZeroUint(item))
+                                           .map(item =&gt; parseInt(item));
 
       const info = await instance.methods.getInfo().call();
 
@@ -205,7 +247,7 @@ async function getHotelInfo(wtHotel, context){
         parseInt(length),
         isZeroString
       );
-      unitTypes[name].images = images.filter(item => !isZeroString(item));
+      unitTypes[name].images = images.filter(item =&gt; !isZeroString(item));
     };
   }
 
@@ -228,7 +270,7 @@ async function getHotelInfo(wtHotel, context){
 
   if(unitAddresses.length){
     for (let address of unitAddresses){
-      const instance = getInstance('HotelUnit', address, context);
+      const instance = getInstance(&apos;HotelUnit&apos;, address, context);
       units[address] = {};
       units[address].active = await instance.methods.active().call();
 
@@ -275,7 +317,7 @@ async function getHotelInfo(wtHotel, context){
     longitude : isZeroUint(longitude) ? null : locationFromUint(longitude, latitude).long,
     waitConfirmation: waitConfirmation,
     images: images,
-    unitTypeNames: unitTypeNames.map(name => bytes32ToString(name)),
+    unitTypeNames: unitTypeNames.map(name =&gt; bytes32ToString(name)),
     unitTypes: unitTypes,
     units: units,
     unitAddresses: unitAddresses
@@ -292,3 +334,20 @@ module.exports = {
   getUnitTypeIndex: getUnitTypeIndex,
 }
 
+</code></pre>
+
+</div>
+
+<footer class="footer">
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.3)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+</footer>
+
+<script src="script/search_index.js"></script>
+<script src="script/search.js"></script>
+<script src="script/pretty-print.js"></script>
+<script src="script/inherited-summary.js"></script>
+<script src="script/test-summary.js"></script>
+<script src="script/inner-link.js"></script>
+<script src="script/patch-for-local.js"></script>
+</body>
+</html>

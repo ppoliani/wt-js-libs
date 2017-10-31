@@ -3,12 +3,18 @@ const util = require('./util/index');
 const HotelManager = require('./HotelManager');
 
 /**
- * BookingData provides methods that let clients query the blockchain about costs
- * of specific reservations, the bookings that have been made at a hotel, and bookings requested
- * for a hotel.
+ * Methods that let managers and clients query the blockchain about hotel booking costs, history,
+ * and status.
+ * @example
+ *   const data = new BookingData({web3: web3})
  */
 class BookingData {
 
+  /**
+   * Instantiates with a web3 object whose provider has been set
+   * @param  {Object} web3
+   * @return {BookingData}
+   */
   constructor(web3){
     this.context = {};
     this.context.web3 = web3;
@@ -16,13 +22,11 @@ class BookingData {
   }
 
   /**
-   * Gets the total real currency cost of booking for a range of days. Check-in is on the first day,
-   * check-out on the last.
-   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
-   * @param  {Addres}           unitAddress  Unit contract to edit
-   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * Gets the national currency cost of a booking for a range of days. Check-in is on the
+   * first day, check-out on the last.
+   * @param  {Address}          unitAddress  Unit contract to edit
    * @param  {Date }            fromDate     check-in date
-   * @param  {Number}           amountDays   integer number of days to book.
+   * @param  {Number}           daysAmount   integer number of days to book.
    * @return {Number}           Floating point cost ex: 100.00
    * @example
       const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
@@ -35,13 +39,11 @@ class BookingData {
   }
 
   /**
-   * Gets the total real currency cost of booking for a range of days. Check-in is on the first day,
+   * Gets the LifToken cost of a booking for a range of days. Check-in is on the first day,
    * check-out on the last.
-   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
-   * @param  {Addres}           unitAddress  Unit contract to edit
-   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+   * @param  {Address}          unitAddress  Unit contract to edit
    * @param  {Date }            fromDate     check-in date
-   * @param  {Number}           amountDays   integer number of days to book.
+   * @param  {Number}           daysAmount   integer number of days to book.
    * @return {Number}           Lif
    * @example
       const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
@@ -55,7 +57,7 @@ class BookingData {
   }
 
   /**
-   * Async method that verifies that a unit is available for a desired range of days
+   * Checks the availability of a unit for a range of days
    * @param  {Address} unitAddress Unit contract address
    * @param  {Date}    fromDate    check-in date
    * @param  {Number}  daysAmount  number of days
@@ -83,15 +85,15 @@ class BookingData {
   }
 
   /**
-   * Async retrieves the bookings history associated a hotel address or addresses. If
-   * `startBlock` is ommitted, method will search from the creation block of each Hotel contract.
-   * @param  {Address | Array} _addresses  Hotel contract address(es) to fetch bookings for
-   * @param  {Number}          startBlock  Optional: block to begin searching from.
-   * @return {Promise}                     Array of bookings objects
+   * Gets the bookings history for hotel(s). If `fromBlock` is ommitted, method will search from the
+   * creation block of each Hotel contract.
+   * @param  {Address|Address[]} _addresses  Hotel contract address(es) to fetch bookings for
+   * @param  {Number}            fromBlock   Optional: block to begin searching from.
+   * @return {Promise}                       Array of bookings objects
    * @example
    * [
    *   {
-   *     "transactionHash": "0x0ed3a16220e3b0cab35c25574b618a02130fe6ab8225ed0b6bad6ffc9640694d",
+   *     "transactionHash": "0x0ed3a16220e3b0cab...6ab8225ed0b6bad6ffc9640694d",
    *     "blockNumber": 25,
    *     "id": "log_f72920af",
    *     "from": "0xc9F805a42837E78D5566f6A04Dba7167F8c6A830",
@@ -133,22 +135,20 @@ class BookingData {
   };
 
   /**
-   * Async retrieves the outstanding bookings requests associated a hotel address or addresses.
-   * This is the set of all requests (wt-contract event: `CallStarted`) that do not have
-   * a matching completion (wt-contract event: `CallFinished`). If `startBlock` is ommitted,
-   * method will search from the creation block of each Hotel contract.
-   * `startBlock` is ommitted, method will search from the creation block of each Hotel contract.
-   * @param  {Address | Array} _addresses  Hotel contract address(es) to fetch bookings for
-   * @param  {Number}          startBlock  Optional: block to begin searching from.
-   * @return {Promise}         Array of bookings objects
+   * Gets pending bookings requests for hotel(s). This is the set of all requests that have not
+   * yet been confirmed by a hotel manager. If `fromBlock` is ommitted, method will search from
+   * the creation block of each Hotel contract.
+   * @param  {Address|Address[]}  _addresses  Hotel contract address(es) to fetch bookings for
+   * @param  {Number}             fromBlock   Optional: block to begin searching from.
+   * @return {Promise}            Array of bookings objects
    * @example
    *  [
    *    {
-   *     "transactionHash": "0x18c59c3f570d4013e0bc300c2f5c4eebf0f4a12dd470ead6560fdcc738a194d0",
+   *     "transactionHash": "0x18c59c3f570d4013e0...470ead6560fdcc738a194d0",
    *     "blockNumber": 26,
    *     "id": "log_9b3eb752",
    *     "from": "0x522701D427e1C2e039fdC32Db41972A46dFD7755",
-   *     "dataHash": "0x4077e0fee8018bb3dd785fd6820fcd393eecb6ce58ea91b3d7ced260761c73fa"
+   *     "dataHash": "0x4077e0fee8018bb3dd7...ea91b3d7ced260761c73fa"
    *    }
    *   ]
    */
