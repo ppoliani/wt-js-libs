@@ -13,3 +13,4 @@ module.exports = {
 
   generateCompleteHotel: hotel.generateCompleteHotel
 }
+

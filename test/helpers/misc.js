@@ -1,7 +1,6 @@
 const _ = require('lodash');
 const util = require('../../libs/util/index');
 
-
 /**
  * Generates a random string of len `length`
  * @param  {Number} length
@@ -37,3 +36,4 @@ module.exports = {
   randomString: randomString,
   sendTokens: sendTokens,
 }
+

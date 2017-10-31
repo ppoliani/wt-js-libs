@@ -147,6 +147,7 @@ describe('BookingData', function() {
       assert.isString(booking.transactionHash);
       assert.isNumber(booking.blockNumber);
       assert.isString(booking.id);
+
       assert.equal(booking.from, user.account);
       assert.equal(booking.fromDate.toString(), fromDate.toString());
       assert.equal(booking.unit, unitAddress);
@@ -236,32 +237,149 @@ describe('BookingData', function() {
     });
   });
 
-  describe.skip('getBookingRequests', function(){
+  describe('getBookingRequests', function(){
+    const fromDate = new Date('10/10/2020');
+    const daysAmount = 5;
+    const price = 1;
+    const guestData = web3.utils.toHex('guestData');
 
-    it('gets booking requests for a hotel', async() => {
+    beforeEach(async () => await Manager.setRequireConfirmation(hotelAddress, true));
 
+    it('gets pending booking requests for a hotel', async() => {
+      await user.book(
+        hotelAddress,
+        unitAddress,
+        fromDate,
+        daysAmount,
+        guestData
+      );
+      const requests = await data.getBookingRequests(hotelAddress);
+      const request = requests[0];
+
+      assert.equal(requests.length, 1);
+      assert.isString(request.transactionHash);
+      assert.isNumber(request.blockNumber);
+      assert.isString(request.id);
+      assert.isString(request.dataHash);
+
+      assert.equal(request.from, user.account);
     });
 
-    it('gets bookings requests for two hotels', async() => {
+    it('gets booking requests for two hotels', async() => {
 
+      const hotelTwo = await help.generateCompleteHotel(
+        index.options.address,
+        ownerAccount,
+        1.5,
+        web3
+      );
+      const managerTwo = hotelTwo.Manager;
+      const hotelAddressTwo = hotelTwo.hotelAddress;
+      const unitAddressTwo = hotelTwo.unitAddress;
+
+      await managerTwo.setRequireConfirmation(hotelAddressTwo, true);
+
+      jakubOptions = {
+        account: jakub,
+        gasMargin: 1.5,
+        tokenAddress: token.options.address,
+        web3: web3
+      }
+
+      const jakubUser = new User(jakubOptions);
+
+      await user.book(
+        hotelAddress,
+        unitAddress,
+        fromDate,
+        daysAmount,
+        guestData
+      );
+
+      await jakubUser.book(
+        hotelAddressTwo,
+        unitAddressTwo,
+        fromDate,
+        daysAmount,
+        guestData
+      );
+
+      const requests = await data.getBookingRequests([hotelAddress, hotelAddressTwo]);
+      assert.equal(requests.length, 2);
+      const augustoBooking = requests.filter(item => item.from === augusto);
+      const jakubBooking = requests.filter(item => item.from === jakub);
+
+      assert.isDefined(augustoBooking);
+      assert.isDefined(jakubBooking);
     });
 
-    it('gets bookings for a hotel starting from a specific block number', async() => {
+    it('gets booking requests for a hotel starting from a specific block number', async() => {
+      await user.bookWithLif(
+        hotelAddress,
+        unitAddress,
+        fromDate,
+        daysAmount,
+        guestData
+      );
+      let requests = await data.getBookingRequests(hotelAddress);
+      const firstRequest = requests[0];
 
+      assert.equal(requests.length, 1);
+
+      blockNumber = await web3.eth.getBlockNumber();
+      blockNumber += 1;
+
+      await user.bookWithLif(
+        hotelAddress,
+        unitAddress,
+        new Date('10/10/2021'),
+        daysAmount,
+        guestData
+      );
+
+      requests = await data.getBookingRequests(hotelAddress, blockNumber);
+      const secondRequest = requests[0];
+
+      assert.isDefined(firstRequest);
+      assert.isDefined(secondRequest);
+      assert.notDeepEqual(firstRequest, secondRequest);
     });
 
     it('filters out completed booking requests', async() => {
+      await user.bookWithLif(
+        hotelAddress,
+        unitAddress,
+        fromDate,
+        daysAmount,
+        guestData
+      );
+      let requests = await data.getBookingRequests(hotelAddress);
+      assert.equal(requests.length, 1);
+      const firstRequest = requests[0];
 
+      await Manager.confirmBooking(hotelAddress, firstRequest.dataHash);
+
+      await user.bookWithLif(
+        hotelAddress,
+        unitAddress,
+        new Date('10/10/2021'),
+        daysAmount,
+        guestData
+      );
+
+      requests = await data.getBookingRequests(hotelAddress);
+      assert.equal(requests.length, 1);
+      const secondRequest = requests[0];
+
+      assert.isDefined(firstRequest);
+      assert.isDefined(secondRequest);
+      assert.notDeepEqual(firstRequest, secondRequest);
     });
 
     it('returns an empty array if there are no bookings', async() => {
-
-    })
+      const requests = await data.getBookingRequests(hotelAddress);
+      assert.isArray(requests);
+      assert.equal(requests.length, 0);
+    });
   })
 });
-
-
-
-
-
-

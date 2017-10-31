@@ -2,6 +2,16 @@ const util = require('./util/index');
 const errors = require('./util/errors');
 const BookingData = require('./BookingData');
 
+/**
+ * User: Client who makes a booking
+ * @example
+ *   const user = new User({
+ *     account: '0xabcd...123',
+ *     gasMargin: 1.24,
+ *     tokenAddress: '0x123...abcd',
+ *     web3: web3
+ *   })
+ */
 class User {
 
   constructor(options){
@@ -95,7 +105,7 @@ class User {
    * Initiates a non-token booking
    * @param  {Address}    hotelAddress  Address of Hotel contract that controls the unit to book
    * @param  {Address}    unitAddress   Address of Unit contract being booked
-   * @param  {Date}       fromDate       check in date
+   * @param  {Date}       fromDate      check in date
    * @param  {Number}     daysAmount    number of days to book
    * @param  {String}     guestData     hex encoded guest data
    * @return {Promievent}
@@ -140,3 +150,4 @@ class User {
 }
 
 module.exports = User;
+

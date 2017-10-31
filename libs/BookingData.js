@@ -141,11 +141,20 @@ class BookingData {
    * @param  {Address | Array} _addresses  Hotel contract address(es) to fetch bookings for
    * @param  {Number}          startBlock  Optional: block to begin searching from.
    * @return {Promise}         Array of bookings objects
-   *
+   * @example
+   *  [
+   *    {
+   *     "transactionHash": "0x18c59c3f570d4013e0bc300c2f5c4eebf0f4a12dd470ead6560fdcc738a194d0",
+   *     "blockNumber": 26,
+   *     "id": "log_9b3eb752",
+   *     "from": "0x522701D427e1C2e039fdC32Db41972A46dFD7755",
+   *     "dataHash": "0x4077e0fee8018bb3dd785fd6820fcd393eecb6ce58ea91b3d7ced260761c73fa"
+   *    }
+   *   ]
    */
-  async getBookingRequests(_addresses, fromBlock){
+  async getBookingRequests(_addresses, fromBlock=0){
     let hotelsToQuery = [];
-    let bookings = [];
+    let requests = [];
 
     (Array.isArray(_addresses))
       ? hotelsToQuery = _addresses
@@ -153,12 +162,41 @@ class BookingData {
 
     if (!hotelsToQuery.length) return [];
 
-    let events;
+    let startedEvents;
+    let finishEvents;
+    let unfinished;
+
     for (let address of hotelsToQuery){
       const hotel = util.getInstance('Hotel', address, this.context);
-      events = await hotel.getPastEvents('Book');
+
+      startedEvents = await hotel.getPastEvents('CallStarted', {
+        fromBlock: fromBlock
+      });
+
+      finishEvents = await hotel.getPastEvents('CallFinish', {
+        fromBlock: fromBlock
+      })
+
+      // Filter out started events without a corresponding finishing event
+      unfinished = startedEvents.filter(event => {
+        let found = finishEvents
+          .findIndex(item => item.returnValues.dataHash === event.returnValues.dataHash);
+
+        return found === -1;
+      })
+
+      unfinished.forEach(event => requests.push({
+        transactionHash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        id: event.id,
+        from: event.returnValues.from,
+        dataHash: event.returnValues.dataHash,
+      }));
     }
+
+    return requests;
   }
 }
 
 module.exports = BookingData;
+
