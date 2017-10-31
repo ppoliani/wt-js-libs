@@ -25,12 +25,6 @@ class HotelManager {
   }
 
   /**
-   * Async retrieves the bookings transaction history associated with each of the owner's hotels.
-   * @return {Object}
-   */
-  async getBookings(){}
-
-  /**
    * Async retrieves data assoiciated with a given Hotel contract address
    * address
    * @param  {Address} hotelAddress address of Hotel contract
@@ -66,8 +60,8 @@ class HotelManager {
   /**
    * Async receives information about bookings for a specific unit
    * on a specific date.
-   * @param  {Address} unitAddress contract address of Unit
-   * @param  {Date}    day         date to get info for
+   * @param  {Address}        unitAddress contract address of Unit
+   * @param  {Date | Number}  day         Date | UTC day since 1970 to get info for
    * @return {Promievent}
    * @example
    *   const {
@@ -77,7 +71,9 @@ class HotelManager {
    *   } = await lib.getReservation('0xab3..cd', new Date('5/31/2020'));
    */
   async getReservation(unitAddress, day) {
-    day = util.formatDate(day);
+    if (day instanceof Date)
+      day = util.formatDate(day);
+
     const unit = util.getInstance('HotelUnit', unitAddress, this.context);
     const result = await unit.methods.getReservation(day).call();
 
@@ -90,45 +86,6 @@ class HotelManager {
       specialLifPrice: specialLifPrice,
       bookedBy: bookedBy
     }
-  }
-
-  /**
-   * Gets the total real currency cost of booking for a range of days. Check-in is on the first day,
-   * check-out on the last.
-   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
-   * @param  {Addres}           unitAddress  Unit contract to edit
-   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
-   * @param  {Date }            fromDate     check-in date
-   * @param  {Number}           amountDays   integer number of days to book.
-   * @return {Number}
-   * @example
-      const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
-   */
-  async getCost(unitAddress, fromDate, daysAmount){
-    const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
-    const cost = await unit.methods.getCost(fromDay, daysAmount).call();
-    return util.bnToPrice(cost);
-  }
-
-  /**
-   * Gets the total real currency cost of booking for a range of days. Check-in is on the first day,
-   * check-out on the last.
-   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
-   * @param  {Addres}           unitAddress  Unit contract to edit
-   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
-   * @param  {Date }            fromDate     check-in date
-   * @param  {Number}           amountDays   integer number of days to book.
-   * @return {Promievent}
-   * @example
-      const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
-   */
-  async getLifCost(unitAddress, fromDate, daysAmount){
-    const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
-    const wei = await unit.methods.getLifCost(fromDay, daysAmount).call();
-
-    return util.lifWei2Lif(wei).toNumber();
   }
 
   /**
@@ -196,6 +153,26 @@ class HotelManager {
   }
 
   /**
+   * Sets a boolean flag in the Hotel contract that determines whether bookings
+   * can happen instantly or require confirmation by a manager before they
+   * proceed.
+   * @param {Address} hotelAddress  Contract address of the hotel to edit.
+   * @param {Boolean} value         t/f: require confirmation
+   */
+  async setRequireConfirmation(hotelAddress, value){
+    const {
+      hotel,
+      index
+    } = await util.getHotelAndIndex(hotelAddress, this.context);
+
+    const data = await hotel.methods
+      .changeConfirmation(value)
+      .encodeABI();
+
+    return util.execute(data, index, this.context);
+  }
+
+  /**
    * Edits the name and description of a Hotel contract
    * @param  {Address} hotelAddress contract address
    * @param  {String}  name         plaintext hotel name
@@ -255,6 +232,26 @@ class HotelManager {
 
     const data = await hotel.methods
       .editLocation(timezone, long, lat)
+      .encodeABI();
+
+    return util.execute(data, index, this.context);
+  }
+
+  /**
+   * Confirms a pending booking request. `reservationId` is the value of the `dataHash` field
+   * from a `CallStarted` event fired when a booking that requires confirmation is initiated.
+   * @param  {Address} hotelAddress  Hotel contract address that controls unit requested
+   * @param  {String}  reservationId data hash.
+   * @return {Promievent}
+   */
+  async confirmBooking(hotelAddress, reservationId){
+    const {
+      hotel,
+      index
+    } = await util.getHotelAndIndex(hotelAddress, this.context);
+
+    const data = await hotel.methods
+      .continueCall(reservationId)
       .encodeABI();
 
     return util.execute(data, index, this.context);

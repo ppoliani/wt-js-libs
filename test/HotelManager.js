@@ -1,5 +1,3 @@
-'use strict';
-
 const assert = require('chai').assert;
 const util = require('../libs/util/index');
 const _ = require('lodash');
@@ -74,6 +72,15 @@ describe('HotelManager', function() {
       address = Object.keys(hotels)[0];
     });
 
+    it('setRequireConfirmation: sets the confirmation requirement status', async function(){
+      let hotel = await lib.getHotel(address);
+      assert.isFalse(hotel.waitConfirmation);
+
+      await lib.setRequireConfirmation(address, true);
+      hotel = await lib.getHotel(address);
+      assert.isTrue(hotel.waitConfirmation);
+    });
+
     it('changeHotelInfo: edits the hotel info', async function(){
       const newName = 'Awesome WTHotel';
       const newDescription = 'Awesome Winding Tree Hotel';
@@ -111,7 +118,6 @@ describe('HotelManager', function() {
       assert.equal(hotel.longitude, longitude);
       assert.equal(hotel.latitude, latitude);
     });
-
   });
 
   describe('UnitTypes', () => {
@@ -293,7 +299,7 @@ describe('HotelManager', function() {
         daysAmount
       )
 
-      const fromDay = util.parseDate(fromDate);
+      const fromDay = util.formatDate(fromDate);
       const range = _.range(fromDay, fromDay + daysAmount);
 
       for (let day of range) {
@@ -320,7 +326,7 @@ describe('HotelManager', function() {
         daysAmount
       )
 
-      const fromDay = util.parseDate(fromDate);
+      const fromDay = util.formatDate(fromDate);
       const range = _.range(fromDay, fromDay + daysAmount);
 
       for (let day of range) {
@@ -362,31 +368,6 @@ describe('HotelManager', function() {
         assert(false);
       } catch(e){}
     });
-
-    it('getCost: gets the total cost for a booking over a range of days', async () => {
-      const fromDate = new Date('10/10/2020');
-      const daysAmount = 5;
-      const price = 100.00;
-      const expectedCost = price * daysAmount;
-
-      await lib.setDefaultPrice(hotelAddress, unitAddress, price);
-      const actualCost = await lib.getCost(unitAddress, fromDate, daysAmount);
-
-      assert.equal(expectedCost, actualCost);
-    })
-
-    it('getLifCost: gets the total cost for a booking over a range of days', async () => {
-      const fromDate = new Date('10/10/2020');
-      const daysAmount = 5;
-      const price = 20;
-      const expectedCost = price * daysAmount;
-
-      await lib.setDefaultLifPrice(hotelAddress, unitAddress, price);
-      const actualCost = await lib.getLifCost(unitAddress, fromDate, daysAmount);
-
-      assert.equal(expectedCost, actualCost);
-    })
   });
 });
-
 

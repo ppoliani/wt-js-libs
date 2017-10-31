@@ -45,7 +45,7 @@ const zeroBytes32 = '0x000000000000000000000000000000000000000000000000000000000
 
 // Returns the date from a single integer in format DD/MM/YYYY
 function parseDate(date){
-  return moment([1970, 0, 1]).add(date, 'days').format('L');
+  return moment([1970, 0, 1]).add(date, 'days').toDate();
 };
 
 // Returns the date formatted in days since 1970 0 1
