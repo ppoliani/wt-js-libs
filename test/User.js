@@ -11,6 +11,10 @@ const Web3 = require('web3');
 const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider);
 
+(process.env.TEST_BUILD)
+  ? HotelManager = require('../dist/node/User.js')
+  : HotelManager = require('../libs/User.js');
+
 describe('User', function(){
   const defaultGas = 400000;
 

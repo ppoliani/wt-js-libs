@@ -5,8 +5,9 @@ var WebpackBundleSizeAnalyzerPlugin = require('webpack-bundle-size-analyzer').We
 module.exports = {
   devtool: "source-map",
   entry: {
-    WTHotel: "./libs/WTHotel.js",
-    WTUser: "./libs/WTUser.js"
+    BookingData: "./libs/BookingData.js",
+    HotelManager: "./libs/HotelManager.js",
+    User: "./libs/User.js"
   },
   module: {
     rules: [

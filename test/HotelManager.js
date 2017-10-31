@@ -8,7 +8,7 @@ const web3 = new Web3(provider);
 
 let HotelManager;
 
-(process.argv.indexOf('test-build') > 0)
+(process.env.TEST_BUILD)
   ? HotelManager = require('../dist/node/HotelManager.js')
   : HotelManager = require('../libs/HotelManager.js');
 
