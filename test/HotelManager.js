@@ -72,6 +72,15 @@ describe('HotelManager', function() {
       address = Object.keys(hotels)[0];
     });
 
+    it('setRequireConfirmation: sets the confirmation requirement status', async function(){
+      let hotel = await lib.getHotel(address);
+      assert.isFalse(hotel.waitConfirmation);
+
+      await lib.setRequireConfirmation(address, true);
+      hotel = await lib.getHotel(address);
+      assert.isTrue(hotel.waitConfirmation);
+    });
+
     it('changeHotelInfo: edits the hotel info', async function(){
       const newName = 'Awesome WTHotel';
       const newDescription = 'Awesome Winding Tree Hotel';
@@ -109,7 +118,6 @@ describe('HotelManager', function() {
       assert.equal(hotel.longitude, longitude);
       assert.equal(hotel.latitude, latitude);
     });
-
   });
 
   describe('UnitTypes', () => {
@@ -291,7 +299,7 @@ describe('HotelManager', function() {
         daysAmount
       )
 
-      const fromDay = util.parseDate(fromDate);
+      const fromDay = util.formatDate(fromDate);
       const range = _.range(fromDay, fromDay + daysAmount);
 
       for (let day of range) {
@@ -318,7 +326,7 @@ describe('HotelManager', function() {
         daysAmount
       )
 
-      const fromDay = util.parseDate(fromDate);
+      const fromDay = util.formatDate(fromDate);
       const range = _.range(fromDay, fromDay + daysAmount);
 
       for (let day of range) {

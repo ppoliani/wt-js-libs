@@ -13,11 +13,14 @@ class User {
     this.bookings = new BookingData(options.web3);
   }
 
-  async _compileBooking(unitAddress, fromDay, daysAmount, guestData){
+  /**
+   * Private method that composes a non-token booking's data for execution by sendTransaction
+   */
+  async _compileBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData){
     const hotel = util.getInstance('Hotel', hotelAddress, this.context);
 
     const bookData = await hotel.methods
-      .book(unitAddress, fromDay, daysAmount)
+      .book(unitAddress, this.account, fromDay, daysAmount)
       .encodeABI();
 
     return await hotel.methods
@@ -25,6 +28,9 @@ class User {
       .encodeABI();
   }
 
+  /**
+   * Private method that composes a token based booking's data for execution by sendTransaction
+   */
   async _compileLifBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData){
     const hotel = util.getInstance('Hotel', hotelAddress, this.context);
 
@@ -37,11 +43,20 @@ class User {
       .encodeABI();
   }
 
+
+  /**
+   * Initiates a token-payment booking
+   * @param  {Address}    hotelAddress  Address of Hotel contract that controls the unit to book
+   * @param  {Address}    unitAddress   Address of Unit contract being booked
+   * @param  {Date}       fromDate      check in date
+   * @param  {Number}     daysAmount    number of days to book
+   * @param  {String}     guestData     hex encoded guest data
+   * @return {Promievent}
+   */
   async bookWithLif(hotelAddress, unitAddress, fromDate, daysAmount, guestData) {
     const fromDay = util.formatDate(fromDate);
 
     const cost = await this.bookings.getLifCost(unitAddress, fromDay, daysAmount);
-
     const enough = await this.balanceCheck(cost);
     const available = await this.bookings.unitIsAvailable(unitAddress, fromDate, daysAmount);
 
@@ -76,8 +91,36 @@ class User {
     return this.context.web3.eth.sendTransaction(options);
   };
 
-  async book(hotelAddress, unitAddress, checkIn, daysAmount, guestData){
+  /**
+   * Initiates a non-token booking
+   * @param  {Address}    hotelAddress  Address of Hotel contract that controls the unit to book
+   * @param  {Address}    unitAddress   Address of Unit contract being booked
+   * @param  {Date}       fromDate       check in date
+   * @param  {Number}     daysAmount    number of days to book
+   * @param  {String}     guestData     hex encoded guest data
+   * @return {Promievent}
+   */
+  async book(hotelAddress, unitAddress, fromDate, daysAmount, guestData){
+    const fromDay = util.formatDate(fromDate);
 
+    const data = await this._compileBooking(
+      hotelAddress,
+      unitAddress,
+      fromDay,
+      daysAmount,
+      guestData
+    );
+
+    const options = {
+      from: this.account,
+      to: hotelAddress,
+      data: data
+    };
+
+    const estimate = await this.context.web3.eth.estimateGas(options);
+    options.gas = util.addGasMargin(estimate, this.context);
+
+    return this.context.web3.eth.sendTransaction(options);
   }
 
   /**

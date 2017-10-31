@@ -247,17 +247,18 @@ async function getHotelInfo(wtHotel, context){
   }
 
   // Hotel Info
-  const name =        await wtHotel.methods.name().call();
-  const description = await wtHotel.methods.description().call();
-  const manager =     await wtHotel.methods.manager().call();
-  const lineOne =     await wtHotel.methods.lineOne().call();
-  const lineTwo =     await wtHotel.methods.lineTwo().call();
-  const zip =         await wtHotel.methods.zip().call();
-  const country =     await wtHotel.methods.country().call();
-  const created =     await wtHotel.methods.created().call();
-  const timezone =    await wtHotel.methods.timezone().call();
-  const latitude =    await wtHotel.methods.latitude().call();
-  const longitude =   await wtHotel.methods.longitude().call();
+  const name =             await wtHotel.methods.name().call();
+  const description =      await wtHotel.methods.description().call();
+  const manager =          await wtHotel.methods.manager().call();
+  const lineOne =          await wtHotel.methods.lineOne().call();
+  const lineTwo =          await wtHotel.methods.lineTwo().call();
+  const zip =              await wtHotel.methods.zip().call();
+  const country =          await wtHotel.methods.country().call();
+  const created =          await wtHotel.methods.created().call();
+  const timezone =         await wtHotel.methods.timezone().call();
+  const latitude =         await wtHotel.methods.latitude().call();
+  const longitude =        await wtHotel.methods.longitude().call();
+  const waitConfirmation = await wtHotel.methods.waitConfirmation().call();
 
   return {
     name: isZeroString(name) ? null : name,
@@ -271,6 +272,7 @@ async function getHotelInfo(wtHotel, context){
     timezone : isZeroUint(timezone) ? null : parseInt(timezone),
     latitude : isZeroUint(latitude) ? null : locationFromUint(longitude, latitude).lat,
     longitude : isZeroUint(longitude) ? null : locationFromUint(longitude, latitude).long,
+    waitConfirmation: waitConfirmation,
     images: images,
     unitTypeNames: unitTypeNames.map(name => bytes32ToString(name)),
     unitTypes: unitTypes,

@@ -15,7 +15,7 @@ const web3 = new Web3(provider);
   ? HotelManager = require('../dist/node/HotelManager.js')
   : HotelManager = require('../libs/HotelManager.js');
 
-describe.only('BookingData', function() {
+describe('BookingData', function() {
   const defaultGas = 400000;
 
   let Manager;
