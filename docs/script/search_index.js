@@ -18,24 +18,6 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
-    "wt-js-libs/libs/wtkey.js~wtkey",
-    "function/index.html#static-function-WTKey",
-    "<span>WTKey</span> <span class=\"search-result-import-path\">wt-js-libs/libs/WTKey.js</span>",
-    "function"
-  ],
-  [
-    "wt-js-libs/libs/wtuser.js~wtuser",
-    "function/index.html#static-function-WTUser",
-    "<span>WTUser</span> <span class=\"search-result-import-path\">wt-js-libs/libs/WTUser.js</span>",
-    "function"
-  ],
-  [
-    "wt-js-libs/libs/wtwallet.js~wtwallet",
-    "function/index.html#static-function-WTWallet",
-    "<span>WTWallet</span> <span class=\"search-result-import-path\">wt-js-libs/libs/WTWallet.js</span>",
-    "function"
-  ],
-  [
     "libs/.external-ecmascript.js~array",
     "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array",
     "libs/.external-ecmascript.js~Array",
@@ -640,30 +622,6 @@ window.esdocSearchIndex = [
     "class/libs/User.js~User.html#instance-member-token",
     "libs/User.js~User#token",
     "member"
-  ],
-  [
-    "libs/wthotel.js",
-    "file/libs/WTHotel.js.html",
-    "libs/WTHotel.js",
-    "file"
-  ],
-  [
-    "libs/wtkey.js",
-    "file/libs/WTKey.js.html",
-    "libs/WTKey.js",
-    "file"
-  ],
-  [
-    "libs/wtuser.js",
-    "file/libs/WTUser.js.html",
-    "libs/WTUser.js",
-    "file"
-  ],
-  [
-    "libs/wtwallet.js",
-    "file/libs/WTWallet.js.html",
-    "libs/WTWallet.js",
-    "file"
   ],
   [
     "libs/util/errors.js",

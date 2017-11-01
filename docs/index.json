@@ -569,7 +569,7 @@
     "name": "libs/BookingData.js",
     "content": "const _ = require('lodash');\nconst util = require('./util/index');\nconst HotelManager = require('./HotelManager');\n\n/**\n * Methods that let managers and clients query the blockchain about hotel booking costs, history,\n * and status.\n * @example\n *   const data = new BookingData({web3: web3})\n */\nclass BookingData {\n\n  /**\n   * Instantiates with a web3 object whose provider has been set\n   * @param  {Object} web3\n   * @return {BookingData}\n   */\n  constructor(web3){\n    this.context = {};\n    this.context.web3 = web3;\n    this.manager = new HotelManager({web3: web3});\n  }\n\n  /**\n   * Gets the national currency cost of a booking for a range of days. Check-in is on the\n   * first day, check-out on the last.\n   * @param  {Address}          unitAddress  Unit contract to edit\n   * @param  {Date }            fromDate     check-in date\n   * @param  {Number}           daysAmount   integer number of days to book.\n   * @return {Number}           Floating point cost ex: 100.00\n   * @example\n      const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);\n   */\n  async getCost(unitAddress, fromDate, daysAmount){\n    const fromDay = util.formatDate(fromDate);\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n    const cost = await unit.methods.getCost(fromDay, daysAmount).call();\n    return util.bnToPrice(cost);\n  }\n\n  /**\n   * Gets the LifToken cost of a booking for a range of days. Check-in is on the first day,\n   * check-out on the last.\n   * @param  {Address}          unitAddress  Unit contract to edit\n   * @param  {Date }            fromDate     check-in date\n   * @param  {Number}           daysAmount   integer number of days to book.\n   * @return {Number}           Lif\n   * @example\n      const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);\n   */\n  async getLifCost(unitAddress, fromDate, daysAmount){\n    const fromDay = util.formatDate(fromDate);\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n    const wei = await unit.methods.getLifCost(fromDay, daysAmount).call();\n\n    return util.lifWei2Lif(wei, this.context);\n  }\n\n  /**\n   * Checks the availability of a unit for a range of days\n   * @param  {Address} unitAddress Unit contract address\n   * @param  {Date}    fromDate    check-in date\n   * @param  {Number}  daysAmount  number of days\n   * @return {Boolean}\n   */\n  async unitIsAvailable(unitAddress, fromDate, daysAmount){\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n    const fromDay = util.formatDate(fromDate);\n    const range = _.range(fromDay, fromDay + daysAmount);\n\n    const isActive = await unit.methods.active().call();\n    if (!isActive) return false;\n\n    for (let day of range) {\n\n      const {\n        specialPrice,\n        specialLifPrice,\n        bookedBy\n      } = await this.manager.getReservation(unitAddress, day);\n\n      if (!util.isZeroAddress(bookedBy)) return false;\n    }\n    return true;\n  }\n\n  /**\n   * Gets the bookings history for hotel(s). If `fromBlock` is ommitted, method will search from the\n   * creation block of each Hotel contract.\n   * @param  {Address|Address[]} _addresses  Hotel contract address(es) to fetch bookings for\n   * @param  {Number}            fromBlock   Optional: block to begin searching from.\n   * @return {Promise}                       Array of bookings objects\n   * @example\n   * [\n   *   {\n   *     \"transactionHash\": \"0x0ed3a16220e3b0cab...6ab8225ed0b6bad6ffc9640694d\",\n   *     \"blockNumber\": 25,\n   *     \"id\": \"log_f72920af\",\n   *     \"from\": \"0xc9F805a42837E78D5566f6A04Dba7167F8c6A830\",\n   *     \"unit\": \"0xcE85f98D04B25deaa27406492B6d6B747B837741\",\n   *     \"fromDate\": \"2020-10-10T07:00:00.000Z\",\n   *     \"daysAmount\": \"5\"\n   *    }\n   * ]\n   */\n  async getBookings(_addresses, fromBlock=0){\n    let hotelsToQuery = [];\n    let bookings = [];\n\n    (Array.isArray(_addresses))\n      ? hotelsToQuery = _addresses\n      : hotelsToQuery.push(_addresses);\n\n    if (!hotelsToQuery.length) return [];\n\n    let events;\n    for (let address of hotelsToQuery){\n      const hotel = util.getInstance('Hotel', address, this.context);\n\n      events = await hotel.getPastEvents('Book', {\n        fromBlock: fromBlock\n      });\n\n      events.forEach(event => bookings.push({\n        transactionHash: event.transactionHash,\n        blockNumber: event.blockNumber,\n        id: event.id,\n        from: event.returnValues.from,\n        unit: event.returnValues.unit,\n        fromDate: util.parseDate(event.returnValues.fromDay),\n        daysAmount: event.returnValues.daysAmount\n      }));\n    }\n    return bookings;\n  };\n\n  /**\n   * Gets pending bookings requests for hotel(s). This is the set of all requests that have not\n   * yet been confirmed by a hotel manager. If `fromBlock` is ommitted, method will search from\n   * the creation block of each Hotel contract.\n   * @param  {Address|Address[]}  _addresses  Hotel contract address(es) to fetch bookings for\n   * @param  {Number}             fromBlock   Optional: block to begin searching from.\n   * @return {Promise}            Array of bookings objects\n   * @example\n   *  [\n   *    {\n   *     \"transactionHash\": \"0x18c59c3f570d4013e0...470ead6560fdcc738a194d0\",\n   *     \"blockNumber\": 26,\n   *     \"id\": \"log_9b3eb752\",\n   *     \"from\": \"0x522701D427e1C2e039fdC32Db41972A46dFD7755\",\n   *     \"dataHash\": \"0x4077e0fee8018bb3dd7...ea91b3d7ced260761c73fa\"\n   *    }\n   *   ]\n   */\n  async getBookingRequests(_addresses, fromBlock=0){\n    let hotelsToQuery = [];\n    let requests = [];\n\n    (Array.isArray(_addresses))\n      ? hotelsToQuery = _addresses\n      : hotelsToQuery.push(_addresses);\n\n    if (!hotelsToQuery.length) return [];\n\n    let startedEvents;\n    let finishEvents;\n    let unfinished;\n\n    for (let address of hotelsToQuery){\n      const hotel = util.getInstance('Hotel', address, this.context);\n\n      startedEvents = await hotel.getPastEvents('CallStarted', {\n        fromBlock: fromBlock\n      });\n\n      finishEvents = await hotel.getPastEvents('CallFinish', {\n        fromBlock: fromBlock\n      })\n\n      // Filter out started events without a corresponding finishing event\n      unfinished = startedEvents.filter(event => {\n        let found = finishEvents\n          .findIndex(item => item.returnValues.dataHash === event.returnValues.dataHash);\n\n        return found === -1;\n      })\n\n      unfinished.forEach(event => requests.push({\n        transactionHash: event.transactionHash,\n        blockNumber: event.blockNumber,\n        id: event.id,\n        from: event.returnValues.from,\n        dataHash: event.returnValues.dataHash,\n      }));\n    }\n\n    return requests;\n  }\n}\n\nmodule.exports = BookingData;\n\n",
     "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/BookingData.js",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/libs/BookingData.js",
     "access": "public",
     "description": null,
     "lineNumber": 1
@@ -987,7 +987,7 @@
     "name": "libs/HotelManager.js",
     "content": "const util = require('./util/index.js');\n\n/**\n * Methods that allow a manager to create / administrate hotels\n * @example\n *   const hotel = new HotelManager({\n *     indexAddress: '0x75a3...b', // Address of the WTIndex contract that lists this hotel\n *     owner: '0xab3...cd',        // Payer of lib tx fees, registered as owner the WTIndex\n *     web3: web3,                 // Instantiated web3 object with its provider set.\n *   });\n */\nclass HotelManager {\n\n  /**\n   * Instantiates a HotelManager with a web3 object, an owner account address, and the address of\n   * the Index contract that has registered hotel assets.\n   * @param  {Object} options (see example above)\n   * @return {HotelManager}\n   */\n  constructor(options){\n    this.hotels = options.hotels || {};\n    this.hotelsAddrs = [];\n    this.owner = options.owner || null;\n    this.web3 = options.web3 || {};\n    this.context = options;\n\n    this.WTIndex = util.getInstance('WTIndex', options.indexAddress, this.context);\n\n    this.context.WTIndex = this.WTIndex;\n    this.context.gasMargin = options.gasMargin || 1;\n  }\n\n  /**\n   * Gets non-bookings data for a Hotel contract (e.g info about its location, unit types\n   * and units).\n   * @param  {Address} hotelAddress address of Hotel contract\n   * @return {Object}\n   * @example\n   *  (we should have a doc link to JSON output here)\n   */\n  async getHotel(hotelAddress){\n    const hotel = util.getInstance('Hotel', hotelAddress, this.context);\n    this.hotels[hotelAddress] = await util.getHotelInfo(hotel, this.context);\n    return this.hotels[hotelAddress];\n  }\n\n  /**\n   * Gets non-bookings data for all the hotels managed by the HotelManager (e.g info about their\n   * location, unit types and units).\n   * @return {Object}\n   * @example\n   * (we should have a doc link to JSON output here)\n   */\n  async getHotels(){\n    this.hotelsAddrs = await this.WTIndex.methods\n      .getHotelsByManager(this.owner)\n      .call();\n\n    this.hotels = {};\n    for (let address of this.hotelsAddrs){\n      await this.getHotel(address)\n    }\n\n    return this.hotels;\n  }\n\n  /**\n   * Gets a unit's reservation data for a specific UTC day or date.\n   * @param  {Address}        unitAddress contract address of Unit\n   * @param  {Date | Number}  day         Date | UTC day since 1970\n   * @return {Promievent}\n   * @example\n   *   const {\n   *     specialPrice,    // Price: 200.00\n   *     specialLifPrice, // LifPrice (ether): 20\n   *     bookedBy         // Address: e.g. '0x39a...2b'\n   *   } = await lib.getReservation('0xab3..cd', new Date('5/31/2020'));\n   */\n  async getReservation(unitAddress, day) {\n    if (day instanceof Date)\n      day = util.formatDate(day);\n\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n    const result = await unit.methods.getReservation(day).call();\n\n    const specialPrice = util.bnToPrice(result[0]);\n    const specialLifPrice = util.lifWei2Lif(result[1], this.context);\n    const bookedBy = result[2];\n\n    return {\n      specialPrice: specialPrice,\n      specialLifPrice: specialLifPrice,\n      bookedBy: bookedBy\n    }\n  }\n\n  /**\n   * Gets the hotel data previously retrieved by a `getHotel` call\n   * @return {Object}\n   * @example\n   *   (we should have a doc link to JSON output here)\n   */\n  getCachedHotel(hotelAddress) {\n    return this.hotels[hotelAddress];\n  }\n\n  /**\n   * Gets hotel data previously retrieved by a `getHotels` call (see above)\n   * @return {Object}\n   * @example\n   *   (we should have a doc link to JSON output here)\n   */\n  getCachedHotels() {\n    return this.hotels;\n  }\n\n  /**\n   * Gets the contract addresses of all hotels previously retrieved by a `getHotels` call\n   * @return {Array}\n   * @example\n   *  const [Hotel1, Hotel2] = lib.getHotelsAddrs();\n   */\n  getCachedHotelsAddrs() {\n    return this.hotelsAddrs;\n  }\n\n  /**\n   * Sets the Hotel class's web3 instance.\n   * @param {Object} _web3 Web3 instance, already instantiated with a provider\n   */\n  setWeb3(_web3){\n    this.web3 = _web3;\n    this.context.web3 = _web3;\n  }\n\n  /**\n   * Creates a Hotel contract instance and registers it with the HotelManager's WTIndex contract\n   * @param  {String} name         name\n   * @param  {String} description  description\n   * @return {Promievent}\n   */\n  async createHotel(name, description){\n    const estimate = await this.WTIndex.methods\n      .registerHotel(name, description)\n      .estimateGas();\n\n    const data = await this.WTIndex.methods\n      .registerHotel(name, description)\n      .encodeABI();\n\n    const options = {\n      from: this.owner,\n      to: this.WTIndex.options.address,\n      gas: util.addGasMargin(estimate, this.context),\n      data: data\n    }\n\n    return this.web3.eth.sendTransaction(options);\n  }\n\n  /**\n   * Sets a boolean flag in a Hotel contract that determines whether bookings\n   * can happen instantly or require confirmation by a manager before they\n   * proceed.\n   * @param {Address} hotelAddress  Contract address of the hotel to edit.\n   * @param {Boolean} value         t/f: require confirmation\n   */\n  async setRequireConfirmation(hotelAddress, value){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const data = await hotel.methods\n      .changeConfirmation(value)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Edits a hotel's name and description.\n   * @param  {Address} hotelAddress contract address\n   * @param  {String}  name         hotel name\n   * @param  {String}  description  hotel description\n   * @return {Promievent}\n   */\n  async changeHotelInfo(hotelAddress, name, description){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const data = await hotel.methods\n      .editInfo(name, description)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Edits a hotel's physical address data.\n   * @param  {Address} hotelAddress contract address\n   * @param  {String} lineOne       physical address data\n   * @param  {String} lineTwo       physical address data\n   * @param  {String} zipCode       physical address data\n   * @param  {String} country       physical address data\n   * @return {Promievent}\n   */\n  async changeHotelAddress(hotelAddress, lineOne, lineTwo, zipCode, country){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const data = await hotel.methods\n      .editAddress(lineOne, lineTwo, zipCode, country)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Edits a hotel's coordinate location and timezone data.\n   * @param  {Address} hotelAddress contract address\n   * @param  {Number} timezone      positive integer timezone relative to GMT\n   * @param  {Number} latitude      GPS latitude location data e.g `-3.703578`\n   * @param  {Number} longitude     GPS longitude location data e.g `40.426371`\n   * @return {Promievent}\n   */\n  async changeHotelLocation(hotelAddress, timezone, latitude, longitude){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const {long, lat} = util.locationToUint(longitude, latitude);\n\n    const data = await hotel.methods\n      .editLocation(timezone, long, lat)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Confirms a pending booking request. `reservationId` is the value of the `dataHash` field\n   * from the `CallStarted` event fired when a booking that requires confirmation is initiated.\n   * @param  {Address} hotelAddress  Hotel contract address that controls unit requested\n   * @param  {String}  reservationId data hash.\n   * @return {Promievent}\n   */\n  async confirmBooking(hotelAddress, reservationId){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const data = await hotel.methods\n      .continueCall(reservationId)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Deploys a UnitType contract and registers it to an existing Hotel contract\n   * @param  {Address} hotelAddress Hotel contract that will control created UnitType contract\n   * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'\n   * @return {Promievent}\n   */\n  async addUnitType(hotelAddress, unitType){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const instance = await util.deployUnitType(unitType, hotelAddress, this.context)\n\n    const data = hotel.methods\n      .addUnitType(instance.options.address)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Unregisters a UnitType contract from an existing Hotel contract\n   * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to remove\n   * @param  {String}  unitType     unique plain text id of UnitType, ex: 'BASIC_ROOM'\n   * @return {Promievent}\n   */\n  async removeUnitType(hotelAddress, unitType){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const typeIndex = await util.getUnitTypeIndex(hotel, unitType, this.context);\n    const typeHex = this.web3.utils.toHex(unitType);\n\n    const data = hotel.methods\n      .removeUnitType(typeHex, typeIndex)\n      .encodeABI();\n\n    return util.execute(data, index, this.context, 400000); //<- testrpc bug estimating deletions?\n  }\n\n  /**\n   * Edits a unit type's basic info data.\n   * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit\n   * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'\n   * @param  {String} description   description: e.g. 'Simple. Clean.'\n   * @param  {Number} minGuests     minimum number of guests that can stay in UnitType\n   * @param  {Number} maxGuests     maximum number of guests that can stay in UnitType\n   * @param  {String} price         price of UnitType: e.g '50 euros'\n   * @return {Promievent}\n   */\n  async editUnitType(hotelAddress, unitType, description, minGuests, maxGuests, price){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const typeHex = this.web3.utils.toHex(unitType);\n    const address = await hotel.methods.getUnitType(typeHex).call();\n    const instance = util.getInstance('HotelUnitType', address, this.context);\n\n    const editData = instance.methods\n      .edit(description, minGuests, maxGuests, price)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnitType(typeHex, editData)\n      .encodeABI();\n\n    return util.execute(hotelData, index, this.context);\n  }\n\n  /**\n   * Adds an amenity to a unit type\n   * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit\n   * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'\n   * @param  {Number} amenity       integer code of amenity to add: ex: 23\n   * @return {Promievent}\n   */\n  async addAmenity(hotelAddress, unitType, amenity){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const typeHex = this.web3.utils.toHex(unitType);\n    const address = await hotel.methods.getUnitType(typeHex).call();\n    const instance = util.getInstance('HotelUnitType', address, this.context);\n\n    const amenityData = instance.methods\n      .addAmenity(amenity)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnitType(typeHex, amenityData)\n      .encodeABI();\n\n    return util.execute(hotelData, index, this.context);\n  }\n\n  /**\n   * Removes an amenity from a unit type.\n   * @param  {Address} hotelAddress   Hotel contract that controls the UnitType contract to edit\n   * @param  {String}  unitType       unique plain text id of UnitType, ex: 'BASIC_ROOM'\n   * @param  {Number}  amenity        integer code of amenity to remove: ex: 23\n   * @return {Promievent}\n   */\n  async removeAmenity(hotelAddress, unitType, amenity){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const typeHex = this.web3.utils.toHex(unitType);\n    const address = await hotel.methods.getUnitType(typeHex).call();\n    const instance = util.getInstance('HotelUnitType', address, this.context);\n\n    const amenityData = instance.methods\n      .removeAmenity(amenity)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnitType(typeHex, amenityData)\n      .encodeABI();\n\n    return util.execute(hotelData, index, this.context);\n  }\n\n  /**\n   * Deploys a Unit contract and registers it to an existing Hotel contract\n   * @param {Address} hotelAddress  Hotel contract that will control created Unit contract\n   * @param {String}  unitType      unique plain text id of this units UnitType, ex: 'BASIC_ROOM'\n   * @return {Promievent}\n   */\n  async addUnit(hotelAddress, unitType){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const instance = await util.deployUnit(unitType, hotelAddress, this.context)\n\n    const data = hotel.methods\n      .addUnit(instance.options.address)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Unregisters a Unit contract from an existing Hotel contract\n   * @param  {Address} hotelAddress   Hotel contract that controls the Unit contract to remove\n   * @param  {Address} unitAddress    Unit contract to remove\n   * @return {Promievent}\n   */\n  async removeUnit(hotelAddress, unitAddress){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const data = hotel.methods\n      .removeUnit(unitAddress)\n      .encodeABI();\n\n    return util.execute(data, index, this.context);\n  }\n\n  /**\n   * Sets a Unit contracts `active` status. This determines whether or not it can be booked.\n   * @param {Address} hotelAddress  Hotel contract that controls the Unit contract to edit\n   * @param {Address} unitAddress   Unit contract to edit\n   * @param {Boolean} active        Unit is locked when false.\n   */\n  async setUnitActive(hotelAddress, unitAddress, active){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n\n    const unitData = unit.methods\n      .setActive(active)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnit(unit.options.address, unitData)\n      .encodeABI();\n\n    return util.execute(hotelData, index, this.context);\n  }\n\n  /**\n   * Sets the default price for a unit\n   * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited\n   * @param {Address}   unitAddress   Unit contract to edit\n   * @param {Number}    price         Integer or floating point price\n   * @return {Promievent}\n   */\n  async setDefaultPrice(hotelAddress, unitAddress, price){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const uintPrice = util.priceToUint(price);\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n\n    const unitData = unit.methods\n      .setDefaultPrice(uintPrice)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnit(unit.options.address, unitData)\n      .encodeABI();\n\n    await util.execute(hotelData, index, this.context);\n  }\n\n  /**\n   * Sets the default LifPrice for this unit\n   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit\n   * @param  {Address}          unitAddress  Unit contract to edit\n   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)\n   * @return {Promievent}\n  */\n  async setDefaultLifPrice(hotelAddress, unitAddress, price){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const weiPrice = util.lif2LifWei(price, this.context);\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n\n    const unitData = unit.methods\n      .setDefaultLifPrice(weiPrice)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnit(unit.options.address, unitData)\n      .encodeABI();\n\n    await util.execute(hotelData, index, this.context);\n  }\n\n  /**\n   * Changes the default currency code\n   * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited\n   * @param {Address}   unitAddress   Unit contract to edit\n   * @param {Number}    code          Integer currency code btw 0 and 255\n   * @param {Function}  converter     ex `euro = kroneToEuro(krone)`\n   * @param {Date}      convertStart  date to begin search of specialPrices\n   * @param {Date}      convertEnd    date (inclusive) to end search of specialPrices\n   * @return {Promievent}\n   */\n  async setCurrencyCode(hotelAddress, unitAddress, code, converter, convertStart, convertEnd){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    code = util.currencyCodeToHex(code, this.context);\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n\n    const unitData = unit.methods\n      .setCurrencyCode(code)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnit(unit.options.address, unitData)\n      .encodeABI();\n\n    await util.execute(hotelData, index, this.context);\n\n    // -------------------------------- NB ----------------------------------------\n    // We probably need to iterate through a range of dates and\n    // convert special prices from old to new denomination. We probably also need\n    // to estimate how many we can do at once.\n  }\n\n  /**\n   * Sets a unit's national currency booking price for range of days. Check-in is on\n   * the first day, check-out on the last.\n   * @param  {Address} hotelAddress Hotel contract that controls the Unit contract to edit\n   * @param  {Addres}  unitAddress  Unit contract to edit\n   * @param  {Number}  price        integer or floating point price\n   * @param  {Date}    fromDate     check-in date\n   * @param  {Number}  amountDays   integer number of days to book.\n   * @return {Promievent}\n   */\n  async setUnitSpecialPrice(hotelAddress, unitAddress, price, fromDate, amountDays){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const fromDay = util.formatDate(fromDate);\n    const uintPrice = util.priceToUint(price);\n\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n\n    const unitData = unit.methods\n      .setSpecialPrice(uintPrice, fromDay, amountDays)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnit(unit.options.address, unitData)\n      .encodeABI();\n\n    return util.execute(hotelData, index, this.context);\n  }\n\n  /**\n   * Sets a unit's booking price for range of days. Check-in is on the first day,\n   * check-out on the last.\n   * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit\n   * @param  {Address}          unitAddress  Unit contract to edit\n   * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)\n   * @param  {Date}             fromDate     check-in date\n   * @param  {Number}           amountDays   integer number of days to book.\n   * @return {Promievent}\n   */\n  async setUnitSpecialLifPrice(hotelAddress, unitAddress, price, fromDate, amountDays){\n    const {\n      hotel,\n      index\n    } = await util.getHotelAndIndex(hotelAddress, this.context);\n\n    const lifPrice = util.lif2LifWei(price, this.context);\n    const fromDay = util.formatDate(fromDate);\n    const unit = util.getInstance('HotelUnit', unitAddress, this.context);\n\n    const unitData = unit.methods\n      .setSpecialLifPrice(lifPrice, fromDay, amountDays)\n      .encodeABI();\n\n    const hotelData = hotel.methods\n      .callUnit(unit.options.address, unitData)\n      .encodeABI();\n\n    return util.execute(hotelData, index, this.context);\n  }\n};\n\nmodule.exports = HotelManager;\n",
     "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/HotelManager.js",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/libs/HotelManager.js",
     "access": "public",
     "description": null,
     "lineNumber": 1
@@ -2453,7 +2453,7 @@
     "name": "libs/User.js",
     "content": "const util = require('./util/index');\nconst errors = require('./util/errors');\nconst BookingData = require('./BookingData');\n\n/**\n * Methods that allow hotel clients to make bookings.\n * @example\n *   const user = new User({\n *     account: '0xabcd...123',       // Client's account address\n *     gasMargin: 1.24,               // Multiple to increase gasEstimate by to ensure tx success.\n *     tokenAddress: '0x123...abcd',  // LifToken contract address\n *     web3: web3                     // Web3 object instantiated with a provider\n *   })\n */\nclass User {\n\n  /**\n   * Instantiates a User with an Ethereum account address, a LifToken address, and a Web3 instance\n   * whose provider has been set.\n   * @param  {Object} options\n   * @return {User}\n   */\n  constructor(options){\n    this.context = {};\n    this.account = options.account || null;\n    this.context.web3 = options.web3;\n    this.context.gasMargin = options.gasMargin || 1;\n    this.token = util.getInstance('LifToken', options.tokenAddress, this.context);\n    this.bookings = new BookingData(options.web3);\n  }\n\n  /**\n   * Private method that composes a non-token booking's data for execution by sendTransaction\n   */\n  async _compileBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData){\n    const hotel = util.getInstance('Hotel', hotelAddress, this.context);\n\n    const bookData = await hotel.methods\n      .book(unitAddress, this.account, fromDay, daysAmount)\n      .encodeABI();\n\n    return await hotel.methods\n      .beginCall(bookData, guestData)\n      .encodeABI();\n  }\n\n  /**\n   * Private method that composes a token based booking's data for execution by sendTransaction\n   */\n  async _compileLifBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData){\n    const hotel = util.getInstance('Hotel', hotelAddress, this.context);\n\n    const bookData = await hotel.methods\n      .bookWithLif(unitAddress, this.account, fromDay, daysAmount)\n      .encodeABI();\n\n    return await hotel.methods\n      .beginCall(bookData, guestData)\n      .encodeABI();\n  }\n\n\n  /**\n   * Initiates a token-payment booking\n   * @param  {Address}    hotelAddress  Address of Hotel contract that controls the unit to book\n   * @param  {Address}    unitAddress   Address of Unit contract being booked\n   * @param  {Date}       fromDate      check in date\n   * @param  {Number}     daysAmount    number of days to book\n   * @param  {String}     guestData     hex encoded guest data\n   * @return {Promievent}\n   */\n  async bookWithLif(hotelAddress, unitAddress, fromDate, daysAmount, guestData) {\n    const fromDay = util.formatDate(fromDate);\n\n    const cost = await this.bookings.getLifCost(unitAddress, fromDay, daysAmount);\n    const enough = await this.balanceCheck(cost);\n    const available = await this.bookings.unitIsAvailable(unitAddress, fromDate, daysAmount);\n\n    if (!enough)\n      return Promise.reject(errors.insufficientBalance);\n\n    if (!available)\n      return Promise.reject(errors.notAvailable);\n\n    const bookData = await this._compileLifBooking(\n      hotelAddress,\n      unitAddress,\n      fromDay,\n      daysAmount,\n      guestData\n    );\n\n    const weiCost = util.lif2LifWei(cost, this.context);\n    const approvalData = await this.token.methods\n      .approveData(hotelAddress, weiCost, bookData)\n      .encodeABI();\n\n    const options = {\n      from: this.account,\n      to: this.token.options.address,\n      data: approvalData\n    };\n\n    const estimate = await this.context.web3.eth.estimateGas(options);\n    options.gas = util.addGasMargin(estimate, this.context);\n\n    return this.context.web3.eth.sendTransaction(options);\n  };\n\n  /**\n   * Initiates a non-token booking\n   * @param  {Address}    hotelAddress  Address of Hotel contract that controls the unit to book\n   * @param  {Address}    unitAddress   Address of Unit contract being booked\n   * @param  {Date}       fromDate      check in date\n   * @param  {Number}     daysAmount    number of days to book\n   * @param  {String}     guestData     hex encoded guest data\n   * @return {Promievent}\n   */\n  async book(hotelAddress, unitAddress, fromDate, daysAmount, guestData){\n    const fromDay = util.formatDate(fromDate);\n\n    const data = await this._compileBooking(\n      hotelAddress,\n      unitAddress,\n      fromDay,\n      daysAmount,\n      guestData\n    );\n\n    const options = {\n      from: this.account,\n      to: hotelAddress,\n      data: data\n    };\n\n    const estimate = await this.context.web3.eth.estimateGas(options);\n    options.gas = util.addGasMargin(estimate, this.context);\n\n    return this.context.web3.eth.sendTransaction(options);\n  }\n\n  /**\n   * Returns true if user account's LifToken balance is greater than or equal to\n   * a booking's LifToken cost.\n   * @param  {Number}  cost    Lif 'ether'\n   * @return {Boolean}\n   */\n  async balanceCheck(cost){\n    let weiCost = util.lif2LifWei(cost, this.context);\n    weiCost = new this.context.web3.utils.BN(weiCost);\n\n    let balance = await this.token.methods.balanceOf(this.account).call();\n    balance = new this.context.web3.utils.BN(balance);\n\n    return balance.gte(weiCost);\n  }\n}\n\nmodule.exports = User;\n\n",
     "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/User.js",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/libs/User.js",
     "access": "public",
     "description": null,
     "lineNumber": 1
@@ -2922,10 +2922,10 @@
   {
     "__docId__": 115,
     "kind": "file",
-    "name": "libs/WTHotel.js",
-    "content": "/*\nvar WTKey = require('./WTKey');\nvar WTWallet = require('./WTWallet');\nvar WTUtils = require('./WTUtils');\nvar WTKeyIndexContract = require('../build/contracts/WTKeyIndex.json');\nvar WTIndexContract = require('../build/contracts/WTIndex.json');\nvar HotelContract = require('../build/contracts/Hotel.json');\nvar UnitTypeContract = require('../build/contracts/UnitType.json');\nvar UnitContract = require('../build/contracts/Unit.json');\nvar PrivateCallContract = require('../build/contracts/PrivateCall.json');\nvar LifTokenContract = require('../build/contracts/LifToken.json');\n\nconst util = require('ethereumjs-util');\n\nvar Hotel = function(options){\n\n  // Winding Tree key for encryption\n  this.WTKey = new WTKey(options.keys || {});\n\n  // Ethereum Wallet\n  this.wallet = new WTWallet(options.wallet || {});\n\n  this.utils = WTUtils;\n\n  this.web3 = this.wallet.web3;\n\n  this.hotels = options.hotels || {};\n  this.indexAddress = options.indexAddress || '';\n  this.wtIndex = options.indexAddress ? new WTIndexContract().at(options.indexAddress) : null;\n  this.contracts = {\n    WTIndex: WTIndexContract,\n    WTKeyIndex: WTKeyIndexContract,\n    Hotel: HotelContract,\n    LifToken: LifTokenContract,\n    HotelUnit: UnitContract,\n    HotelUnitType: UnitTypeContract\n  };\n\n  this.setIndex = function(indexAddress){\n    this.indexAddress = indexAddress;\n    this.wtIndex = this.web3.eth.contract(this.contracts.WTIndex.abi).at(indexAddress);\n  }\n\n  // Update hotels information\n  this.updateHotels = function(){\n    this.hotelsAddrs = this.wtIndex.getHotelsByOwner(this.wallet.address);\n    this.hotels = {};\n    for (var i = 0; i < this.hotelsAddrs.length; i++)\n      this.updateHotel(this.hotelsAddrs[i]);\n    return this.hotels;\n  }\n\n  // Update hotel information\n  this.updateHotel = function(hotelAddress){\n    let wtHotel = this.web3.eth.contract(this.contracts.Hotel.abi).at(hotelAddress);\n    let unitTypeNames = wtHotel.getUnitTypeNames();\n    let unitTypes = [];\n    let totalUnits = wtHotel.getChildsLength();\n    let units = [];\n\n    // Hotel images\n    let hotelImages = [];\n    for (var z = 0; z < wtHotel.getImagesLength(); z++)\n      hotelImages.push(wtHotel.getImage(z));\n\n    // Unit Types\n    for (var i = 1; i < unitTypeNames.length; i++) {\n      if (wtHotel.getUnitType(unitTypeNames[i]) != '0x0000000000000000000000000000000000000000'){\n        let hotelUnitType = this.web3.eth.contract(this.contracts.HotelUnitType.abi).at(wtHotel.getUnitType(unitTypeNames[i]));\n        let unitTypeInfo = hotelUnitType.getInfo();\n        let hotelUnitAmenities = [];\n        hotelUnitType.getAmenities(z).map(function(a ,i){\n          if (parseInt(a) > 0) hotelUnitAmenities.push(parseInt(a));\n        });\n        let images = [];\n        for (var z = 0; z < hotelUnitType.getImagesLength(); z++)\n          images.push(hotelUnitType.getImage(z));\n        unitTypes.push({\n          type: this.web3.toAscii(unitTypeNames[i]).replace(/\\W+/g, \"\"),\n          index: z,\n          description: unitTypeInfo[0],\n          minGuests:  parseInt(unitTypeInfo[1]),\n          maxGuests: parseInt(unitTypeInfo[2]),\n          price: unitTypeInfo[3],\n          active: unitTypeInfo[3],\n          amenities: hotelUnitAmenities,\n          images: images\n        });\n      }\n    }\n\n    // Hotel Units\n    for (var i = 1; i < totalUnits; i++) {\n      let unitAddress = wtHotel.childs.call(i);\n      if (unitAddress != '0x0000000000000000000000000000000000000000'){\n        let hotelUnit = this.web3.eth.contract(this.contracts.HotelUnit.abi).at(unitAddress);\n        units.push({\n          address: unitAddress,\n          unitType: hotelUnit.unitType(),\n          active: hotelUnit.active()\n        });\n      }\n    }\n\n    this.hotels[hotelAddress] = {\n      name: wtHotel.name(),\n      description: wtHotel.description(),\n      lineOne: wtHotel.lineOne(),\n      lineTwo: wtHotel.lineTwo(),\n      zip: wtHotel.zip(),\n      country: wtHotel.country(),\n      timezone: parseInt(wtHotel.timezone()),\n      latitude: parseInt(wtHotel.latitude()),\n      longitude: parseInt(wtHotel.longitude()),\n      images: hotelImages,\n      unitTypes: unitTypes,\n      units: units\n    };\n    return this.hotels[hotelAddress];\n  }\n\n  // Create a hotel contract\n  this.createHotel = async function(password, name, description){\n    var self = this;\n    const data = self.wtIndex.registerHotel.getData(name, description, {from: self.wallet.address});\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    await self.wallet.waitForTX(tx.transactionHash);\n    const wtHotelAddress = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(wtHotelAddress[ wtHotelAddress.length-1 ]);\n    return wtHotel;\n  }\n\n  this.changeHotelInfo = async function(password, hotelAddress, name, description){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let data = wtHotel.editInfo.getData(name, description);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data, {from: self.wallet.address});\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.changeHotelAddress = async function(password, hotelAddress, lineOne, lineTwo, zipCode, country){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let data = wtHotel.editAddress.getData(lineOne, lineTwo, zipCode, country);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data, {from: self.wallet.address});\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.changeHotelLocation = async function(password, hotelAddress, timezone, latitude, longitude){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let data = wtHotel.editLocation.getData(timezone, latitude, longitude);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.addUnitType = async function(password, hotelAddress, unitType){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n\n    let data = self.web3.eth.contract(self.contracts.HotelUnitType.abi).new.getData(hotelAddress, self.web3.toHex(unitType), {data: self.contracts.HotelUnitType.unlinked_binary});\n    let tx = await self.wallet.sendTx(password, {\n      data: data,\n      gasLimit: 4700000\n    });\n    const createTx = await self.wallet.waitForTX(tx.transactionHash);\n    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(createTx.contractAddress);\n\n    data = wtHotel.addUnitType.getData(wtHotelUnitType.address, self.web3.toHex(unitType));\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.removeUnitType = async function(password, hotelAddress, unitType){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    const unitTypeHex = util.bufferToHex(util.setLengthRight(self.web3.toHex(unitType), 32));\n    const unitTypeIndex = wtHotel.getUnitTypeNames().indexOf(unitTypeHex);\n    let data = wtHotel.removeUnitType.getData(self.web3.toHex(unitType), unitTypeIndex);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    const tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n    this.editUnitType = async function(password, hotelAddress, unitType, description, minGuests, maxGuests, price){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(await wtHotel.getUnitType(self.web3.toHex(unitType)));\n    let data = wtHotelUnitType.edit.getData(description, minGuests, maxGuests, price);\n    data = wtHotel.callUnitType.getData(self.web3.toHex(unitType), data);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n\n  this.addUnit = async function(password, hotelAddress, unitType){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n\n    let data = self.web3.eth.contract(self.contracts.HotelUnit.abi).new.getData(hotelAddress, self.web3.toHex(unitType), {data: self.contracts.HotelUnit.unlinked_binary});\n    let tx = await self.wallet.sendTx(password, {\n      data: data,\n      gasLimit: 4700000\n    });\n    const createTx = await self.wallet.waitForTX(tx.transactionHash);\n\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    data = wtHotel.addUnit.getData(self.web3.toHex(unitType), createTx.contractAddress);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.removeUnit = async function(password, hotelAddress, unitAddress){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let data = wtHotel.removeUnit.getData(unitAddress);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.setUnitActive = async function(password, hotelAddress, unitAddress, active){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let wtHotelUnit = self.web3.eth.contract(self.contracts.HotelUnit.abi).at(unitAddress);\n    let data = wtHotelUnit.setActive.getData(active);\n    data = wtHotel.callUnit.getData(unitAddress, data);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.setUnitPrice = async function(password, hotelAddress, unitAddress, price, fromDay, amountDays){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let wtHotelUnit = self.web3.eth.contract(self.contracts.HotelUnit.abi).at(unitAddress);\n    let data = wtHotelUnit.setPrice.getData(price, fromDay, amountDays);\n    data = wtHotel.callUnit.getData(unitAddress, data);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.addAmenity = async function(password, hotelAddress, unitType, amenity){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(await wtHotel.getUnitType(self.web3.toHex(unitType)));\n    let data = wtHotelUnitType.addAmenity.getData(amenity);\n    data = wtHotel.callUnitType.getData(self.web3.toHex(unitType), data);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.removeAmenity = async function(password, hotelAddress, unitType, amenity){\n    var self = this;\n    const wtHotelAddresses = await self.wtIndex.getHotelsByOwner(self.wallet.address);\n    const hotelIndex = wtHotelAddresses.indexOf(hotelAddress);\n    let wtHotel = self.web3.eth.contract(self.contracts.Hotel.abi).at(hotelAddress);\n    let wtHotelUnitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(await wtHotel.getUnitType(self.web3.toHex(unitType)));\n    let data = wtHotelUnitType.removeAmenity.getData(amenity);\n    data = wtHotel.callUnitType.getData(self.web3.toHex(unitType), data);\n    data = self.wtIndex.callHotel.getData(hotelIndex, data);\n    let tx = await self.wallet.sendTx(password, {\n      to: self.wtIndex.address,\n      data: data,\n      gasLimit: 4700000\n    });\n    return await self.wallet.waitForTX(tx.transactionHash);\n  }\n\n  this.getBookings = function(){\n    var self = this;\n    var txs = [];\n    let wtHotelAddresses = this.wtIndex.getHotelsByOwner(this.wallet.address);\n    for (var i = 0; i < wtHotelAddresses.length; i++){\n      let wtHotel = this.web3.eth.contract(this.contracts.Hotel.abi).at(wtHotelAddresses[i]);\n      let unitTypeNames = wtHotel.getUnitTypeNames();\n      for (var u = 1; u < unitTypeNames.length; u++)\n        txs = _.merge(txs, self.wallet.getTxs({\n          address: wtHotel.getUnitType(unitTypeNames[u]),\n          from: false\n        }));\n    }\n    for (i = 0; i < txs.length; i++)\n      txs[i].decoded = self.abiDecoder.decodeMethod(txs[i].input);\n    txs = _.filter(txs, function(t){ return t.decoded});\n    for (i = 0; i < txs.length; i++){\n      let unitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(txs[i].to);\n      txs[i].publicCall = self.abiDecoder.decodeMethod(txs[i].decoded.params[0].value);\n      txs[i].privateData = self.web3.toAscii(txs[i].decoded.params[1].value);\n      txs[i].unitType = self.web3.toAscii( unitType.unitType() ).replace(/\\W+/g, \"\");\n      txs[i].hotelAddress = unitType.owner();\n      txs[i].hotelName = self.web3.eth.contract(self.contracts.Hotel.abi).at(txs[i].hotelAddress).name();\n      txs[i].accepted = false;\n    }\n    return txs;\n  }\n\n  this.getHotels = function() {\n    return this.hotels;\n  }\n\n  this.getHotelsAddrs = function() {\n    return this.hotelsAddrs;\n  }\n\n  this.getHotel = function(hotelAddress) {\n    return this.hotels[hotelAddress];\n  }\n\n  this.getReservation = function(unitAddress, day) {\n    return this.web3.eth.contract(this.contracts.HotelUnit.abi).at(unitAddress).getReservation(day);\n  }\n\n};\n\nmodule.exports = Hotel;*/",
+    "name": "libs/util/errors.js",
+    "content": "/**\n * Errors that a validator can consume, localized here so we can standardize their format\n * @type {Object}\n */\nmodule.exports = {\n  insufficientBalance: 'Token balance was too low to attempt this booking.',\n  notAvailable:        'Unit is not available for the requested dates'\n}\n\n",
     "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/WTHotel.js",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/libs/util/errors.js",
     "access": "public",
     "description": null,
     "lineNumber": 1
@@ -2933,474 +2933,16 @@
   {
     "__docId__": 116,
     "kind": "file",
-    "name": "libs/WTKey.js",
-    "content": "\nvar kbpgp = require('kbpgp');\nvar F = kbpgp[\"const\"].openpgp;\n\nvar WTKey = function(options){\n\n  this.kbpgp = kbpgp;\n  this.kbpgp.constants = kbpgp[\"const\"].openpgp;\n  this.publicKey = options.publicKey || '';\n  this.privateKey = options.privateKey || '';\n\n  this.importPub = function(publicKey){\n    this.publicKey = options.publicKey;\n  }\n\n  this.importPriv = function(privateKey){\n    this.privateKey = options.privateKey;\n  }\n\n  // Generate a user key pair to use with a userid and passphrase\n  this.generate = function(userid, passphrase){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      kbpgp.KeyManager.generate_ecc({\n        userid : userid,\n        ecc: true,\n        primary: {\n          nbits: 384,\n          flags: self.kbpgp.constants.certify_keys\n            | self.kbpgp.constants.sign_data\n            | self.kbpgp.constants.auth\n            | self.kbpgp.constants.encrypt_comm\n            | self.kbpgp.constants.encrypt_storage,\n          expire_in: 0  // never expire\n        }\n     }, function(err, generated) {\n        if (err)\n          reject(err);\n        else{\n          generated.sign({}, function(err) {\n            var publicPromise = new Promise(function(resolve, reject){\n              generated.export_pgp_public({}, function(err, pgp_public) {\n                if (err)\n                  reject(err);\n                else\n                  resolve(pgp_public);\n              });\n            });\n            var privatePromise = new Promise(function(resolve, reject){\n              generated.export_pgp_private({ passphrase: passphrase }, function(err, pgp_private) {\n                if (err)\n                  reject(err);\n                else\n                  resolve(pgp_private);\n              });\n            });\n            Promise.all([publicPromise, privatePromise]).then(function(keys){\n              self.publicKey = keys[0];\n              self.privateKey = keys[1];\n              resolve({ public: keys[0], private: keys[1] });\n            });\n          })\n        }\n      });\n    })\n  };\n\n  // Unlock and get the parsed the private key with the passphrase\n  this.getPrivate = function(passphrase){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      self.kbpgp.KeyManager.import_from_armored_pgp({\n        armored: self.privateKey\n      }, function(err, unlocked) {\n        if (err)\n          reject(err);\n        else {\n          if (unlocked.is_pgp_locked()) {\n            unlocked.unlock_pgp({\n              passphrase: passphrase\n            }, function(err) {\n              if (err)\n                reject(err);\n              else\n                resolve(unlocked);\n            });\n          } else {\n            resolve(unlocked);\n          }\n        }\n      });\n    });\n  };\n\n  // Get the parsed public key\n  this.getPublic = function(){\n    return this.parsePublic(this.publicKey);\n  };\n\n  // Parse a public key\n  this.parsePublic = function(pubKey){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      self.kbpgp.KeyManager.import_from_armored_pgp({\n        armored: pubKey\n      }, function(err, loaded) {\n        if (err)\n          reject(err);\n        else\n          resolve(loaded);\n      });\n    });\n  };\n\n  // Encrypt a message with and array of public keys, the passphrase need to unlock the private key and sign the data.\n  this.encrypt = function(passphrase, to, data){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      var promises = [];\n      promises.push(self.getPrivate(passphrase))\n      for (var i = 0; i < to.length; i++)\n        promises.push(self.parsePublic(to[i]));\n      Promise.all(promises).then(function(result){\n        self.kbpgp.box({\n          msg: data,\n          encrypt_for: result.splice(1),\n          sign_with: result[0]\n        }, function(err, result_string, result_buffer) {\n          if (err)\n            reject(err);\n          else\n            resolve(result_string);\n        });\n      })\n    });\n  },\n\n  // Decrypt the data of a message with the sender public key and the receiver passphrase\n  this.decrypt = function(passphrase, from, data){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      Promise.all([\n        self.parsePublic(from),\n        self.getPrivate(passphrase)\n      ]).then(function(result){\n        var ring = new self.kbpgp.keyring.KeyRing;\n        ring.add_key_manager(result[0])\n        ring.add_key_manager(result[1])\n        self.kbpgp.unbox({keyfetch: ring, armored: data }, function(err, literals) {\n          if (err) {\n            reject(err);\n          } else {\n            var ds = km = null;\n            ds = literals[0].get_data_signer();\n            if (ds) { km = ds.get_key_manager(); }\n            if (km) {\n              resolve([literals[0].toString(), km.get_pgp_fingerprint().toString('hex')])\n            } else {\n              resolve([literals[0].toString(), null]);\n            }\n          }\n        });\n      });\n    });\n  };\n\n};\n\nmodule.exports = WTKey;\n",
+    "name": "libs/util/hotel.js",
+    "content": "const {\n  abis,\n  binaries,\n  getInstance,\n  isZeroAddress,\n  isZeroBytes8,\n  isZeroBytes32,\n  isZeroUint,\n  isZeroString,\n  bytes32ToString,\n  bnToPrice,\n  lifWei2Lif,\n  locationFromUint,\n  addGasMargin,\n  jsArrayFromSolidityArray,\n  pretty,\n} = require('./misc')\n\n\n/**\n * Takes bundled data for a hotel call and executes it through the WTIndex callHotel method.\n * @param  {String} data    hex string: output of `instance.method.xyz().encodeABI()`\n * @param  {Number} index   position of hotel in the WTIndex registry\n * @param  {Object} context Hotel class context\n * @param  {Number} gas     Hardcoded gas limit, used in contexts where estimations fail.\n * @return {Promievent}\n */\nasync function execute(data, index, context, gas){\n  const callData = await context.WTIndex.methods\n    .callHotel(index, data)\n    .encodeABI();\n\n  const options = {\n    from: context.owner,\n    to: context.WTIndex.options.address,\n    data: callData\n  };\n\n  const estimate = await context.web3.eth.estimateGas(options);\n  options.gas = gas || addGasMargin(estimate, context);\n\n  return context.web3.eth.sendTransaction(options);\n}\n\n/**\n * Deploys an Index contract that functions as a registry and transaction entry\n * point for the contract system's Hotels.\n * system's Hotels\n * @param  {Object}  context  ex: context.web3 / context.owner\n * @return {Instance}         WTIndex instance\n */\nasync function deployIndex(context){\n  const abi = abis['WTIndex'];\n  const instance = new context.web3.eth.Contract(abi);\n\n  const deployOptions = {\n    data: binaries['WTIndex'],\n    arguments: []\n  };\n\n  const tx = await deployContract(instance, deployOptions, context);\n  return getInstance('WTIndex', tx.contractAddress, context);\n}\n\n/**\n * Deploys a Unit contract which will subsequently be added to a Hotel's list of units\n * @param  {String}  unitType     name of this unit's UnitType, ex: `BASIC_ROOM`\n * @param  {Address} hotelAddress address of the Hotel instance that will own this contract\n * @param  {Object}  context      ex: context.web3 / context.owner\n * @return {Promievent}           web3 deployment result\n */\nasync function deployUnit(unitType, hotelAddress, context){\n  const typeHex = context.web3.utils.toHex(unitType);\n  const abi = abis['HotelUnit'];\n  const instance = new context.web3.eth.Contract(abi);\n\n  const deployOptions = {\n    data: binaries['HotelUnit'],\n    arguments: [hotelAddress, typeHex]\n  };\n\n  const tx = await deployContract(instance, deployOptions, context);\n  return getInstance('HotelUnitType', tx.contractAddress, context);\n}\n\n/**\n * Deploys a UnitType contract which will subsequently be added to a Hotel's list of unit types\n * @param  {String}  unitType     name of UnitType, ex: `BASIC_ROOM`\n * @param  {Address} hotelAddress address of the Hotel instance that will own this contract\n * @param  {Object}  context      ex: context.web3 / context.owner\n * @return {Instance}             UnitType contract instance\n */\nasync function deployUnitType(unitType, hotelAddress, context){\n  const typeHex = context.web3.utils.toHex(unitType);\n  const abi = abis['HotelUnitType'];\n  const instance = await new context.web3.eth.Contract(abi);\n\n  const deployOptions = {\n    data: binaries['HotelUnitType'],\n    arguments: [hotelAddress, typeHex]\n  };\n\n  const tx = await deployContract(instance, deployOptions, context);\n  return getInstance('HotelUnitType', tx.contractAddress, context);\n}\n\n/**\n * Deploys an arbitary contract\n * @param  {Instance} instance      web3 1.0 contract instance\n * @param  {Object}   deployOptions options passed the web3 deployment method\n * @param  {Object}   context       Hotel class context\n * @return {Promievent}\n */\nasync function deployContract(instance, deployOptions, context){\n  const data = await instance\n    .deploy(deployOptions)\n    .encodeABI();\n\n  const options = {\n    from: context.owner,\n    data: data\n  };\n\n  estimate = await context.web3.eth.estimateGas(options);\n  options.gas = addGasMargin(estimate, context);\n\n  return context.web3.eth.sendTransaction(options);\n}\n\n/**\n * Async method that gets the index of a unit type the user intends to remove\n * @param  {Instance} hotel    Hotel\n * @param  {String}   unitType ex: 'BASIC_ROOM'\n * @param  {Object}   context  ex: context.web3\n * @return {Number}\n */\nasync function getUnitTypeIndex(hotel, unitType, context){\n  const typeHex = context.web3.utils.toHex(unitType);\n  const typeBytes32 = context.web3.utils.padRight(typeHex, 64);\n  const typeNames = await hotel.methods.getUnitTypeNames().call();\n  return typeNames.indexOf(typeBytes32);\n}\n\n/**\n * Async method that gets a hotel instance and its index number in the WTIndex parent contract\n * @param  {Address}  address  contract address of Hotel instance\n * @param  {Object}   context  {WTIndex: <Instance>, owner: <address>, web3: <web3>}\n * @return {Promise}  { hotel: <instance>, index: <number> }\n */\nasync function getHotelAndIndex(address, context){\n  const methods = context.WTIndex.methods;\n  const owner = context.owner;\n\n  const addresses = await methods.getHotelsByManager(owner).call();\n  const index = await addresses.indexOf(address);\n  const hotel = getInstance('Hotel', address, context);\n  return {\n    hotel: hotel,\n    index: index\n  }\n}\n\n/**\n * Async method which gets all info associated with hotel, its unit types and units. Zero\n * elements in the solidity arrays are filtered out and data types are converted from\n * their solidity form to JS, i.e. bytes32 --> utf8.\n * @param  {Instance} wtHotel   Hotel contract instance\n * @param  {Object}   context   `{WTIndex: <Instance>, owner: <address>, web3: <web3>}`\n * @return {Object}   data\n */\nasync function getHotelInfo(wtHotel, context){\n\n  // UnitTypes & Amenities\n  const unitTypes = {};\n  let unitTypeNames = await wtHotel.methods.getUnitTypeNames().call();\n  unitTypeNames = unitTypeNames.filter(name => !isZeroBytes32(name))\n\n  if (unitTypeNames.length){\n    for (let typeName of unitTypeNames){\n      const unitType = await wtHotel.methods.getUnitType(typeName).call();\n      const instance = getInstance('HotelUnitType', unitType, context);\n\n      const name = context.web3.utils.toUtf8(typeName);\n      unitTypes[name] = {};\n      unitTypes[name].address = instance.address;\n\n      // UnitType Amenities\n      const amenities = await instance.methods.getAmenities().call();\n      unitTypes[name].amenities = amenities.filter(item => !isZeroUint(item))\n                                           .map(item => parseInt(item));\n\n      const info = await instance.methods.getInfo().call();\n\n      unitTypes[name].info = {\n        description: isZeroString(info[0]) ? null : info[0],\n        minGuests: isZeroUint(info[1]) ? null : parseInt(info[1]),\n        maxGuests: isZeroUint(info[2]) ? null : parseInt(info[2]),\n        price: isZeroString(info[3]) ? null : info[3],\n      }\n\n      // UnitType Images\n      const length = await instance.methods.getImagesLength().call();\n      const images = await jsArrayFromSolidityArray(\n        instance.methods.images,\n        parseInt(length),\n        isZeroString\n      );\n      unitTypes[name].images = images.filter(item => !isZeroString(item));\n    };\n  }\n\n  // Hotel Images\n  const imagesLength = await wtHotel.methods.getImagesLength();\n  const images = await jsArrayFromSolidityArray(\n    wtHotel.methods.images,\n    parseInt(imagesLength),\n    isZeroString\n  );\n\n  // Hotel Units\n  const units = {};\n  const unitsLength = await wtHotel.methods.getUnitsLength().call();\n  const unitAddresses = await jsArrayFromSolidityArray(\n    wtHotel.methods.units,\n    parseInt(unitsLength),\n    isZeroAddress\n  );\n\n  if(unitAddresses.length){\n    for (let address of unitAddresses){\n      const instance = getInstance('HotelUnit', address, context);\n      units[address] = {};\n      units[address].active = await instance.methods.active().call();\n\n      const unitType = await instance.methods.unitType().call();\n      units[address].unitType = bytes32ToString(unitType);\n\n      const code = await instance.methods.currencyCode().call();\n      units[address].currencyCode = isZeroBytes8(code) ? null : context.web3.utils.hexToNumber(code);\n\n      const defaultPrice = await instance.methods.defaultPrice().call();\n      units[address].defaultPrice = isZeroUint(defaultPrice) ? null : bnToPrice(defaultPrice);\n\n      let lifWei = await instance.methods.defaultLifPrice().call();\n      lifWei = lifWei2Lif(lifWei, context);\n      units[address].defaultLifPrice = isZeroUint(lifWei) ? null : parseInt(lifWei);\n    }\n  }\n\n  // Hotel Info\n  const name =             await wtHotel.methods.name().call();\n  const description =      await wtHotel.methods.description().call();\n  const manager =          await wtHotel.methods.manager().call();\n  const lineOne =          await wtHotel.methods.lineOne().call();\n  const lineTwo =          await wtHotel.methods.lineTwo().call();\n  const zip =              await wtHotel.methods.zip().call();\n  const country =          await wtHotel.methods.country().call();\n  const created =          await wtHotel.methods.created().call();\n  const timezone =         await wtHotel.methods.timezone().call();\n  const latitude =         await wtHotel.methods.latitude().call();\n  const longitude =        await wtHotel.methods.longitude().call();\n  const waitConfirmation = await wtHotel.methods.waitConfirmation().call();\n\n  return {\n    name: isZeroString(name) ? null : name,\n    description: isZeroString(description) ? null : description,\n    manager: isZeroAddress(manager) ? null : manager,\n    lineOne : isZeroString(lineOne) ? null : lineOne,\n    lineTwo : isZeroString(lineTwo) ? null : lineTwo,\n    zip : isZeroString(zip) ? null : zip,\n    country : isZeroString(country) ? null : country,\n    created: isZeroUint(created) ? null : parseInt(created),\n    timezone : isZeroUint(timezone) ? null : parseInt(timezone),\n    latitude : isZeroUint(latitude) ? null : locationFromUint(longitude, latitude).lat,\n    longitude : isZeroUint(longitude) ? null : locationFromUint(longitude, latitude).long,\n    waitConfirmation: waitConfirmation,\n    images: images,\n    unitTypeNames: unitTypeNames.map(name => bytes32ToString(name)),\n    unitTypes: unitTypes,\n    units: units,\n    unitAddresses: unitAddresses\n  }\n}\n\nmodule.exports = {\n  execute: execute,\n  deployIndex: deployIndex,\n  deployUnitType: deployUnitType,\n  deployUnit: deployUnit,\n  getHotelAndIndex: getHotelAndIndex,\n  getHotelInfo: getHotelInfo,\n  getUnitTypeIndex: getUnitTypeIndex,\n}\n\n",
     "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/WTKey.js",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/libs/util/hotel.js",
     "access": "public",
     "description": null,
     "lineNumber": 1
   },
   {
     "__docId__": 117,
-    "kind": "variable",
-    "name": "kbpgp",
-    "memberof": "libs/WTKey.js",
-    "static": true,
-    "longname": "libs/WTKey.js~kbpgp",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTKey.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 2,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 118,
-    "kind": "variable",
-    "name": "F",
-    "memberof": "libs/WTKey.js",
-    "static": true,
-    "longname": "libs/WTKey.js~F",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTKey.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 3,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 119,
-    "kind": "function",
-    "name": "WTKey",
-    "memberof": "libs/WTKey.js",
-    "generator": false,
-    "async": false,
-    "static": true,
-    "longname": "libs/WTKey.js~WTKey",
-    "access": "public",
-    "export": true,
-    "importPath": "wt-js-libs/libs/WTKey.js",
-    "importStyle": "WTKey",
-    "description": null,
-    "lineNumber": 5,
-    "undocument": true,
-    "params": [
-      {
-        "name": "options",
-        "types": [
-          "*"
-        ]
-      }
-    ],
-    "return": null
-  },
-  {
-    "__docId__": 120,
-    "kind": "file",
-    "name": "libs/WTUser.js",
-    "content": "\nvar WTKey = require('./WTKey');\nvar WTWallet = require('./WTWallet');\nvar WTUtils = require('./WTUtils');\nvar WTKeyIndexContract = require('../build/contracts/WTKeyIndex.json');\nvar WTIndexContract = require('../build/contracts/WTIndex.json');\nvar HotelContract = require('../build/contracts/Hotel.json');\nvar UnitTypeContract = require('../build/contracts/UnitType.json');\nvar UnitContract = require('../build/contracts/Unit.json');\nvar PrivateCallContract = require('../build/contracts/PrivateCall.json');\nvar LifTokenContract = require('../build/contracts/LifToken.json');\n\nconst _ = require('lodash');\n\nvar WTUser = function(options){\n\n  // Winding Tree key for encryption\n  this.WTKey = new WTKey(options.keys || {});\n\n  // Ethereum Wallet\n  this.wallet = new WTWallet(options.wallet || {});\n\n  this.web3 = this.wallet.web3;\n\n  this.utils = WTUtils;\n\n  this.hotels = options.hotels || {};\n  this.indexAddress = options.indexAddress || '';\n  this.wtIndex = options.indexAddress ? new WTIndexContract().at(options.indexAddress) : null;\n  this.contracts = {\n    WTIndex: WTIndexContract,\n    WTKeyIndex: WTKeyIndexContract,\n    Hotel: HotelContract,\n    LifToken: LifTokenContract,\n    HotelUnitType: UnitTypeContract,\n    HotelUnit: UnitContract\n  };\n\n  this.setIndex = function(indexAddress){\n    this.indexAddress = indexAddress;\n    this.wtIndex = this.web3.eth.contract(this.contracts.WTIndex.abi).at(indexAddress);\n  }\n\n  // Update hotels information\n  this.updateHotels = function(){\n    this.hotelsAddrs = this.wtIndex.getHotels().splice(1);\n    this.hotels = {};\n    for (var i = 0; i < this.hotelsAddrs.length; i++)\n      this.updateHotel(this.hotelsAddrs[i]);\n    return this.hotels;\n  }\n\n  // Update hotel information\n  this.updateHotel = function(hotelAddress){\n    let wtHotel = this.web3.eth.contract(this.contracts.Hotel.abi).at(hotelAddress);\n    let unitTypeNames = wtHotel.getUnitTypeNames();\n    let unitTypes = [];\n    let totalUnits = wtHotel.getChildsLength();\n    let units = [];\n\n    // Hotel images\n    let hotelImages = [];\n    for (var z = 0; z < wtHotel.getImagesLength(); z++)\n      hotelImages.push(wtHotel.getImage(z));\n\n    // Unit Types\n    for (var i = 1; i < unitTypeNames.length; i++) {\n      if (wtHotel.getUnitType(unitTypeNames[i]) != '0x0000000000000000000000000000000000000000'){\n        let hotelUnitType = this.web3.eth.contract(this.contracts.HotelUnitType.abi).at(wtHotel.getUnitType(unitTypeNames[i]));\n        let unitTypeInfo = hotelUnitType.getInfo();\n        let hotelUnitAmenities = [];\n        hotelUnitType.getAmenities(z).map(function(a ,i){\n          if (parseInt(a) > 0) hotelUnitAmenities.push(parseInt(a));\n        });\n        let images = [];\n        for (var z = 0; z < hotelUnitType.getImagesLength(); z++)\n          images.push(hotelUnitType.getImage(z));\n        unitTypes.push({\n          type: this.web3.toAscii(unitTypeNames[i]).replace(/\\W+/g, \"\"),\n          index: z,\n          description: unitTypeInfo[0],\n          minGuests:  parseInt(unitTypeInfo[1]),\n          maxGuests: parseInt(unitTypeInfo[2]),\n          price: unitTypeInfo[3],\n          active: unitTypeInfo[3],\n          amenities: hotelUnitAmenities,\n          images: images\n        });\n      }\n    }\n\n    // Hotel Units\n    for (var i = 1; i < totalUnits; i++) {\n      let unitAddress = wtHotel.childs.call(i);\n      if (unitAddress != '0x0000000000000000000000000000000000000000'){\n        let hotelUnit = this.web3.eth.contract(this.contracts.HotelUnit.abi).at(unitAddress);\n        units.push({\n          address: unitAddress,\n          unitType: hotelUnit.unitType(),\n          active: hotelUnit.active()\n        });\n      }\n    }\n\n    this.hotels[hotelAddress] = {\n      name: wtHotel.name(),\n      description: wtHotel.description(),\n      lineOne: wtHotel.lineOne(),\n      lineTwo: wtHotel.lineTwo(),\n      zip: wtHotel.zip(),\n      country: wtHotel.country(),\n      timezone: parseInt(wtHotel.timezone()),\n      latitude: parseInt(wtHotel.latitude()),\n      longitude: parseInt(wtHotel.longitude()),\n      images: hotelImages,\n      unitTypes: unitTypes,\n      units: units\n    };\n    return this.hotels[hotelAddress];\n  }\n\n  this.getBookings = function(){\n    var self = this;\n    var txs = self.wallet.getTxs();\n    for (var i = 0; i < txs.length; i++)\n      txs[i].decoded = self.utils.abiDecoder.decodeMethod(txs[i].input);\n    txs = _.filter(txs, function(t){ return t.decoded});\n    for (i = 0; i < txs.length; i++){\n      let unitType = self.web3.eth.contract(self.contracts.HotelUnitType.abi).at(txs[i].to);\n      txs[i].publicCall = self.utils.abiDecoder.decodeMethod(txs[i].decoded.params[0].value);\n      txs[i].privateData = self.web3.toAscii(txs[i].decoded.params[1].value);\n      txs[i].unitType = self.web3.toAscii( unitType.unitType() ).replace(/\\W+/g, \"\");\n      txs[i].hotelAddress = unitType.owner();\n      txs[i].hotelName = self.web3.eth.contract(self.contracts.Hotel.abi).at(txs[i].hotelAddress).name();\n      txs[i].accepted = true;\n    }\n    return txs;\n  }\n\n  this.bookUnit = async function(password, unitAddress, checkIn, nights, guestData){\n    var self = this;\n\n    // TODO: Add encryption to guest data.\n\n    const privateData = this.web3.toHex(guestData);\n    let hotelUnit = this.web3.eth.contract(this.contracts.HotelUnit.abi).at(unitAddress);\n    let data = hotelUnit.book.getData(self.wallet.address, checkIn, nights);\n    data = hotelUnit.beginCall.getData(data, privateData);\n    let tx = await self.wallet.sendTx(password, {\n      to: unitAddress,\n      data: data,\n      gasLimit: 4700000\n    });\n    const beginCalltx = await self.wallet.waitForTX(tx.transactionHash);\n    const beginCallEvent = this.utils.abiDecoder.decodeLogs(beginCalltx.logs)[0];\n    const pendingCallHash = beginCallEvent.events[1].value;\n    const pendingCall = await hotelUnit.callsPending.call(beginCallEvent.events[1].value);\n    return pendingCall;\n  }\n\n};\n\nmodule.exports = WTUser;\n",
-    "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/WTUser.js",
-    "access": "public",
-    "description": null,
-    "lineNumber": 1
-  },
-  {
-    "__docId__": 121,
-    "kind": "variable",
-    "name": "WTKey",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~WTKey",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 2,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 122,
-    "kind": "variable",
-    "name": "WTWallet",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~WTWallet",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 3,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 123,
-    "kind": "variable",
-    "name": "WTUtils",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~WTUtils",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 4,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 124,
-    "kind": "variable",
-    "name": "WTKeyIndexContract",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~WTKeyIndexContract",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 5,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 125,
-    "kind": "variable",
-    "name": "WTIndexContract",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~WTIndexContract",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 6,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 126,
-    "kind": "variable",
-    "name": "HotelContract",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~HotelContract",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 7,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 127,
-    "kind": "variable",
-    "name": "UnitTypeContract",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~UnitTypeContract",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 8,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 128,
-    "kind": "variable",
-    "name": "UnitContract",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~UnitContract",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 9,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 129,
-    "kind": "variable",
-    "name": "PrivateCallContract",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~PrivateCallContract",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 10,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 130,
-    "kind": "variable",
-    "name": "LifTokenContract",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~LifTokenContract",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 11,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 131,
-    "kind": "variable",
-    "name": "_",
-    "memberof": "libs/WTUser.js",
-    "static": true,
-    "longname": "libs/WTUser.js~_",
-    "access": "private",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 13,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 132,
-    "kind": "function",
-    "name": "WTUser",
-    "memberof": "libs/WTUser.js",
-    "generator": false,
-    "async": false,
-    "static": true,
-    "longname": "libs/WTUser.js~WTUser",
-    "access": "public",
-    "export": true,
-    "importPath": "wt-js-libs/libs/WTUser.js",
-    "importStyle": "WTUser",
-    "description": null,
-    "lineNumber": 15,
-    "undocument": true,
-    "params": [
-      {
-        "name": "options",
-        "types": [
-          "*"
-        ]
-      }
-    ],
-    "return": null
-  },
-  {
-    "__docId__": 133,
-    "kind": "file",
-    "name": "libs/WTWallet.js",
-    "content": "\nvar ethLightWallet = require('eth-lightwallet');\nvar Web3 = require('web3');\nvar EthereumTx = require('ethereumjs-tx');\n\nvar WTWallet = function(options){\n\n  // Web3\n  this.web3 = new Web3(new Web3.providers.HttpProvider(options.web3Provider || 'http://localhost:8545'));\n\n  // Extend form EthLightWallet\n  Object.assign(this, ethLightWallet);\n\n  this.setKeystore = function(ks){\n    this.keystore = ethLightWallet.keystore.deserialize(ks);\n    this.address = '0x'+this.keystore.ksData[\"m/0'/0'/0'\"].addresses[0];\n  }\n\n  this.importWallet = function(ks, password){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      self.keystore = ethLightWallet.keystore.deserialize(ks);\n      self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {\n        if (err)\n          reject(err);\n        self.keystore.generateNewAddress(pwDerivedKey, 1);\n        self.address = '0x'+self.keystore.getAddresses()[0];\n        resolve();\n      });\n    });\n  }\n\n  this.createWallet = function(password){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      ethLightWallet.keystore.createVault({\n        password: password\n      }, function(err, ks) {\n        if (err)\n          reject(err);\n        else{\n          self.keystore = ks;\n          self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {\n            if (err)\n              reject(err);\n            self.keystore.generateNewAddress(pwDerivedKey, 1);\n            self.address = '0x'+self.keystore.getAddresses()[0];\n            resolve(self.keystore);\n          });\n        }\n      });\n    });\n  }\n\n  this.closeWallet = function(){\n    this.keystore = {};\n    this.address = '';\n  }\n\n  this.getSeed = function(password){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {\n        if (err)\n          reject(err);\n        resolve(self.keystore.getSeed(pwDerivedKey));\n      });\n    });\n  }\n\n  this.unlockAccount = function(password){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {\n        if (err)\n          reject(err);\n        if (!self.address){\n          self.keystore.generateNewAddress(pwDerivedKey, 1);\n          self.address = '0x'+self.keystore.getAddresses()[0];\n        }\n        var pvKey = self.keystore.exportPrivateKey(self.address, pwDerivedKey)\n        resolve(pvKey);\n      });\n    });\n  }\n\n  this.signTx = function(password, rawTx){\n    var self = this;\n    return new Promise(function(resolve, reject){\n      self.keystore.keyFromPassword(password, function (err, pwDerivedKey) {\n        if (!self.address){\n          self.keystore.generateNewAddress(pwDerivedKey, 1);\n          self.address = '0x'+self.keystore.getAddresses()[0];\n        }\n        var signedTx = self.signing.signTx(self.keystore, pwDerivedKey, rawTx, self.address);\n        resolve(signedTx);\n      });\n    });\n  }\n\n  this.sendTx = async function(password, txParams){\n    var self = this;\n    if (!txParams.gasLimit)\n      txParams.gasLimit = self.web3.eth.estimateGas({data: txParams.data, to : txParams.to, from: self.address})+1000;\n\n    if (!txParams.nonce)\n      txParams.nonce = self.web3.toHex(self.web3.eth.getTransactionCount(self.address));\n\n    if (!txParams.value)\n      txParams.value = '0x00';\n\n    const privateKey = Buffer.from( await self.unlockAccount(password) , 'hex');\n    const tx = new EthereumTx(txParams);\n    tx.sign(privateKey);\n    const serializedTx = '0x'+tx.serialize().toString('hex');\n    const txHash = self.web3.eth.sendRawTransaction(serializedTx);\n    var txSent = await self.waitForTX(txHash);\n    return txSent;\n  }\n\n  this.isTXMined = function(txHash){\n    var self = this;\n    if (!self.web3.eth.getTransaction(txHash))\n      return false;\n    var txBlock = self.web3.eth.getTransaction(txHash).blockNumber;\n    if ((txBlock !== null) && (parseInt(txBlock) <= parseInt(self.web3.eth.blockNumber)))\n      return true;\n    else\n      return false;\n  }\n\n  this.waitForTX = function(txHash) {\n    var self = this;\n    return new Promise(function (resolve, reject){\n      var wait = setInterval( function() {\n        try{\n          if ( self.isTXMined(txHash)) {\n            clearInterval(wait);\n            resolve(self.web3.eth.getTransactionReceipt(txHash));\n          }\n        } catch(e){\n          reject(e);\n        }\n      }, 1000 );\n    });\n  }\n\n  this.getTxs = function(options) {\n    var self = this;\n    const address = (options && options.address) ? options.address : self.address;\n    const searchTo = (options && options.to) ? options.to : true;\n    const searchFrom = (options && options.from) ? options.from : true;\n    const endBlockNumber = self.web3.eth.blockNumber;\n    var txs = [];\n    for (var i = endBlockNumber; i >= 0; i--) {\n      var block = self.web3.eth.getBlock(i, true);\n      if (block != null && block.transactions != null) {\n        block.transactions.forEach( function(t) {\n          if ((searchFrom && address == t.from) || (searchTo && address == t.to)) {\n            t.receipt = self.web3.eth.getTransactionReceipt(t.hash);\n            txs.push(t);\n          }\n        })\n      }\n    }\n    return txs;\n  }\n\n};\n\nmodule.exports = WTWallet;\n",
-    "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/WTWallet.js",
-    "access": "public",
-    "description": null,
-    "lineNumber": 1
-  },
-  {
-    "__docId__": 134,
-    "kind": "variable",
-    "name": "ethLightWallet",
-    "memberof": "libs/WTWallet.js",
-    "static": true,
-    "longname": "libs/WTWallet.js~ethLightWallet",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTWallet.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 2,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 135,
-    "kind": "variable",
-    "name": "Web3",
-    "memberof": "libs/WTWallet.js",
-    "static": true,
-    "longname": "libs/WTWallet.js~Web3",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTWallet.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 3,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 136,
-    "kind": "variable",
-    "name": "EthereumTx",
-    "memberof": "libs/WTWallet.js",
-    "static": true,
-    "longname": "libs/WTWallet.js~EthereumTx",
-    "access": "public",
-    "export": false,
-    "importPath": "wt-js-libs/libs/WTWallet.js",
-    "importStyle": null,
-    "description": null,
-    "lineNumber": 4,
-    "undocument": true,
-    "type": {
-      "types": [
-        "*"
-      ]
-    },
-    "ignore": true
-  },
-  {
-    "__docId__": 137,
-    "kind": "function",
-    "name": "WTWallet",
-    "memberof": "libs/WTWallet.js",
-    "generator": false,
-    "async": false,
-    "static": true,
-    "longname": "libs/WTWallet.js~WTWallet",
-    "access": "public",
-    "export": true,
-    "importPath": "wt-js-libs/libs/WTWallet.js",
-    "importStyle": "WTWallet",
-    "description": null,
-    "lineNumber": 6,
-    "undocument": true,
-    "params": [
-      {
-        "name": "options",
-        "types": [
-          "*"
-        ]
-      }
-    ],
-    "return": null
-  },
-  {
-    "__docId__": 138,
-    "kind": "file",
-    "name": "libs/util/errors.js",
-    "content": "/**\n * Errors that a validator can consume, localized here so we can standardize their format\n * @type {Object}\n */\nmodule.exports = {\n  insufficientBalance: 'Token balance was too low to attempt this booking.',\n  notAvailable:        'Unit is not available for the requested dates'\n}\n\n",
-    "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/util/errors.js",
-    "access": "public",
-    "description": null,
-    "lineNumber": 1
-  },
-  {
-    "__docId__": 139,
-    "kind": "file",
-    "name": "libs/util/hotel.js",
-    "content": "const {\n  abis,\n  binaries,\n  getInstance,\n  isZeroAddress,\n  isZeroBytes8,\n  isZeroBytes32,\n  isZeroUint,\n  isZeroString,\n  bytes32ToString,\n  bnToPrice,\n  lifWei2Lif,\n  locationFromUint,\n  addGasMargin,\n  jsArrayFromSolidityArray,\n  pretty,\n} = require('./misc')\n\n\n/**\n * Takes bundled data for a hotel call and executes it through the WTIndex callHotel method.\n * @param  {String} data    hex string: output of `instance.method.xyz().encodeABI()`\n * @param  {Number} index   position of hotel in the WTIndex registry\n * @param  {Object} context Hotel class context\n * @param  {Number} gas     Hardcoded gas limit, used in contexts where estimations fail.\n * @return {Promievent}\n */\nasync function execute(data, index, context, gas){\n  const callData = await context.WTIndex.methods\n    .callHotel(index, data)\n    .encodeABI();\n\n  const options = {\n    from: context.owner,\n    to: context.WTIndex.options.address,\n    data: callData\n  };\n\n  const estimate = await context.web3.eth.estimateGas(options);\n  options.gas = gas || addGasMargin(estimate, context);\n\n  return context.web3.eth.sendTransaction(options);\n}\n\n/**\n * Deploys an Index contract that functions as a registry and transaction entry\n * point for the contract system's Hotels.\n * system's Hotels\n * @param  {Object}  context  ex: context.web3 / context.owner\n * @return {Instance}         WTIndex instance\n */\nasync function deployIndex(context){\n  const abi = abis['WTIndex'];\n  const instance = new context.web3.eth.Contract(abi);\n\n  const deployOptions = {\n    data: binaries['WTIndex'],\n    arguments: []\n  };\n\n  const tx = await deployContract(instance, deployOptions, context);\n  return getInstance('WTIndex', tx.contractAddress, context);\n}\n\n/**\n * Deploys a Unit contract which will subsequently be added to a Hotel's list of units\n * @param  {String}  unitType     name of this unit's UnitType, ex: `BASIC_ROOM`\n * @param  {Address} hotelAddress address of the Hotel instance that will own this contract\n * @param  {Object}  context      ex: context.web3 / context.owner\n * @return {Promievent}           web3 deployment result\n */\nasync function deployUnit(unitType, hotelAddress, context){\n  const typeHex = context.web3.utils.toHex(unitType);\n  const abi = abis['HotelUnit'];\n  const instance = new context.web3.eth.Contract(abi);\n\n  const deployOptions = {\n    data: binaries['HotelUnit'],\n    arguments: [hotelAddress, typeHex]\n  };\n\n  const tx = await deployContract(instance, deployOptions, context);\n  return getInstance('HotelUnitType', tx.contractAddress, context);\n}\n\n/**\n * Deploys a UnitType contract which will subsequently be added to a Hotel's list of unit types\n * @param  {String}  unitType     name of UnitType, ex: `BASIC_ROOM`\n * @param  {Address} hotelAddress address of the Hotel instance that will own this contract\n * @param  {Object}  context      ex: context.web3 / context.owner\n * @return {Instance}             UnitType contract instance\n */\nasync function deployUnitType(unitType, hotelAddress, context){\n  const typeHex = context.web3.utils.toHex(unitType);\n  const abi = abis['HotelUnitType'];\n  const instance = await new context.web3.eth.Contract(abi);\n\n  const deployOptions = {\n    data: binaries['HotelUnitType'],\n    arguments: [hotelAddress, typeHex]\n  };\n\n  const tx = await deployContract(instance, deployOptions, context);\n  return getInstance('HotelUnitType', tx.contractAddress, context);\n}\n\n/**\n * Deploys an arbitary contract\n * @param  {Instance} instance      web3 1.0 contract instance\n * @param  {Object}   deployOptions options passed the web3 deployment method\n * @param  {Object}   context       Hotel class context\n * @return {Promievent}\n */\nasync function deployContract(instance, deployOptions, context){\n  const data = await instance\n    .deploy(deployOptions)\n    .encodeABI();\n\n  const options = {\n    from: context.owner,\n    data: data\n  };\n\n  estimate = await context.web3.eth.estimateGas(options);\n  options.gas = addGasMargin(estimate, context);\n\n  return context.web3.eth.sendTransaction(options);\n}\n\n/**\n * Async method that gets the index of a unit type the user intends to remove\n * @param  {Instance} hotel    Hotel\n * @param  {String}   unitType ex: 'BASIC_ROOM'\n * @param  {Object}   context  ex: context.web3\n * @return {Number}\n */\nasync function getUnitTypeIndex(hotel, unitType, context){\n  const typeHex = context.web3.utils.toHex(unitType);\n  const typeBytes32 = context.web3.utils.padRight(typeHex, 64);\n  const typeNames = await hotel.methods.getUnitTypeNames().call();\n  return typeNames.indexOf(typeBytes32);\n}\n\n/**\n * Async method that gets a hotel instance and its index number in the WTIndex parent contract\n * @param  {Address}  address  contract address of Hotel instance\n * @param  {Object}   context  {WTIndex: <Instance>, owner: <address>, web3: <web3>}\n * @return {Promise}  { hotel: <instance>, index: <number> }\n */\nasync function getHotelAndIndex(address, context){\n  const methods = context.WTIndex.methods;\n  const owner = context.owner;\n\n  const addresses = await methods.getHotelsByManager(owner).call();\n  const index = await addresses.indexOf(address);\n  const hotel = getInstance('Hotel', address, context);\n  return {\n    hotel: hotel,\n    index: index\n  }\n}\n\n/**\n * Async method which gets all info associated with hotel, its unit types and units. Zero\n * elements in the solidity arrays are filtered out and data types are converted from\n * their solidity form to JS, i.e. bytes32 --> utf8.\n * @param  {Instance} wtHotel   Hotel contract instance\n * @param  {Object}   context   `{WTIndex: <Instance>, owner: <address>, web3: <web3>}`\n * @return {Object}   data\n */\nasync function getHotelInfo(wtHotel, context){\n\n  // UnitTypes & Amenities\n  const unitTypes = {};\n  let unitTypeNames = await wtHotel.methods.getUnitTypeNames().call();\n  unitTypeNames = unitTypeNames.filter(name => !isZeroBytes32(name))\n\n  if (unitTypeNames.length){\n    for (let typeName of unitTypeNames){\n      const unitType = await wtHotel.methods.getUnitType(typeName).call();\n      const instance = getInstance('HotelUnitType', unitType, context);\n\n      const name = context.web3.utils.toUtf8(typeName);\n      unitTypes[name] = {};\n      unitTypes[name].address = instance.address;\n\n      // UnitType Amenities\n      const amenities = await instance.methods.getAmenities().call();\n      unitTypes[name].amenities = amenities.filter(item => !isZeroUint(item))\n                                           .map(item => parseInt(item));\n\n      const info = await instance.methods.getInfo().call();\n\n      unitTypes[name].info = {\n        description: isZeroString(info[0]) ? null : info[0],\n        minGuests: isZeroUint(info[1]) ? null : parseInt(info[1]),\n        maxGuests: isZeroUint(info[2]) ? null : parseInt(info[2]),\n        price: isZeroString(info[3]) ? null : info[3],\n      }\n\n      // UnitType Images\n      const length = await instance.methods.getImagesLength().call();\n      const images = await jsArrayFromSolidityArray(\n        instance.methods.images,\n        parseInt(length),\n        isZeroString\n      );\n      unitTypes[name].images = images.filter(item => !isZeroString(item));\n    };\n  }\n\n  // Hotel Images\n  const imagesLength = await wtHotel.methods.getImagesLength();\n  const images = await jsArrayFromSolidityArray(\n    wtHotel.methods.images,\n    parseInt(imagesLength),\n    isZeroString\n  );\n\n  // Hotel Units\n  const units = {};\n  const unitsLength = await wtHotel.methods.getUnitsLength().call();\n  const unitAddresses = await jsArrayFromSolidityArray(\n    wtHotel.methods.units,\n    parseInt(unitsLength),\n    isZeroAddress\n  );\n\n  if(unitAddresses.length){\n    for (let address of unitAddresses){\n      const instance = getInstance('HotelUnit', address, context);\n      units[address] = {};\n      units[address].active = await instance.methods.active().call();\n\n      const unitType = await instance.methods.unitType().call();\n      units[address].unitType = bytes32ToString(unitType);\n\n      const code = await instance.methods.currencyCode().call();\n      units[address].currencyCode = isZeroBytes8(code) ? null : context.web3.utils.hexToNumber(code);\n\n      const defaultPrice = await instance.methods.defaultPrice().call();\n      units[address].defaultPrice = isZeroUint(defaultPrice) ? null : bnToPrice(defaultPrice);\n\n      let lifWei = await instance.methods.defaultLifPrice().call();\n      lifWei = lifWei2Lif(lifWei, context);\n      units[address].defaultLifPrice = isZeroUint(lifWei) ? null : parseInt(lifWei);\n    }\n  }\n\n  // Hotel Info\n  const name =             await wtHotel.methods.name().call();\n  const description =      await wtHotel.methods.description().call();\n  const manager =          await wtHotel.methods.manager().call();\n  const lineOne =          await wtHotel.methods.lineOne().call();\n  const lineTwo =          await wtHotel.methods.lineTwo().call();\n  const zip =              await wtHotel.methods.zip().call();\n  const country =          await wtHotel.methods.country().call();\n  const created =          await wtHotel.methods.created().call();\n  const timezone =         await wtHotel.methods.timezone().call();\n  const latitude =         await wtHotel.methods.latitude().call();\n  const longitude =        await wtHotel.methods.longitude().call();\n  const waitConfirmation = await wtHotel.methods.waitConfirmation().call();\n\n  return {\n    name: isZeroString(name) ? null : name,\n    description: isZeroString(description) ? null : description,\n    manager: isZeroAddress(manager) ? null : manager,\n    lineOne : isZeroString(lineOne) ? null : lineOne,\n    lineTwo : isZeroString(lineTwo) ? null : lineTwo,\n    zip : isZeroString(zip) ? null : zip,\n    country : isZeroString(country) ? null : country,\n    created: isZeroUint(created) ? null : parseInt(created),\n    timezone : isZeroUint(timezone) ? null : parseInt(timezone),\n    latitude : isZeroUint(latitude) ? null : locationFromUint(longitude, latitude).lat,\n    longitude : isZeroUint(longitude) ? null : locationFromUint(longitude, latitude).long,\n    waitConfirmation: waitConfirmation,\n    images: images,\n    unitTypeNames: unitTypeNames.map(name => bytes32ToString(name)),\n    unitTypes: unitTypes,\n    units: units,\n    unitAddresses: unitAddresses\n  }\n}\n\nmodule.exports = {\n  execute: execute,\n  deployIndex: deployIndex,\n  deployUnitType: deployUnitType,\n  deployUnit: deployUnit,\n  getHotelAndIndex: getHotelAndIndex,\n  getHotelInfo: getHotelInfo,\n  getUnitTypeIndex: getUnitTypeIndex,\n}\n\n",
-    "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/util/hotel.js",
-    "access": "public",
-    "description": null,
-    "lineNumber": 1
-  },
-  {
-    "__docId__": 140,
     "kind": "variable",
     "name": "abis",
     "memberof": "libs/util/hotel.js",
@@ -3421,7 +2963,7 @@
     "ignore": true
   },
   {
-    "__docId__": 141,
+    "__docId__": 118,
     "kind": "function",
     "name": "execute",
     "memberof": "libs/util/hotel.js",
@@ -3488,7 +3030,7 @@
     "ignore": true
   },
   {
-    "__docId__": 142,
+    "__docId__": 119,
     "kind": "function",
     "name": "deployIndex",
     "memberof": "libs/util/hotel.js",
@@ -3525,7 +3067,7 @@
     "ignore": true
   },
   {
-    "__docId__": 143,
+    "__docId__": 120,
     "kind": "function",
     "name": "deployUnit",
     "memberof": "libs/util/hotel.js",
@@ -3582,7 +3124,7 @@
     "ignore": true
   },
   {
-    "__docId__": 144,
+    "__docId__": 121,
     "kind": "function",
     "name": "deployUnitType",
     "memberof": "libs/util/hotel.js",
@@ -3639,7 +3181,7 @@
     "ignore": true
   },
   {
-    "__docId__": 145,
+    "__docId__": 122,
     "kind": "function",
     "name": "deployContract",
     "memberof": "libs/util/hotel.js",
@@ -3696,7 +3238,7 @@
     "ignore": true
   },
   {
-    "__docId__": 146,
+    "__docId__": 123,
     "kind": "function",
     "name": "getUnitTypeIndex",
     "memberof": "libs/util/hotel.js",
@@ -3753,7 +3295,7 @@
     "ignore": true
   },
   {
-    "__docId__": 147,
+    "__docId__": 124,
     "kind": "function",
     "name": "getHotelAndIndex",
     "memberof": "libs/util/hotel.js",
@@ -3800,7 +3342,7 @@
     "ignore": true
   },
   {
-    "__docId__": 148,
+    "__docId__": 125,
     "kind": "function",
     "name": "getHotelInfo",
     "memberof": "libs/util/hotel.js",
@@ -3847,18 +3389,18 @@
     "ignore": true
   },
   {
-    "__docId__": 149,
+    "__docId__": 126,
     "kind": "file",
     "name": "libs/util/index.js",
     "content": "const hotel = require('./hotel.js');\nconst misc = require('./misc.js');\n\nmodule.exports = {\n\n  // Hotel\n  execute: hotel.execute,\n  deployIndex: hotel.deployIndex,\n  deployUnitType: hotel.deployUnitType,\n  deployUnit: hotel.deployUnit,\n  getHotelInfo: hotel.getHotelInfo,\n  getHotelAndIndex: hotel.getHotelAndIndex,\n  getUnitTypeIndex: hotel.getUnitTypeIndex,\n\n\n  // Misc\n  abiDecoder: misc.abiDecoder,\n  parseDate: misc.parseDate,\n  formatDate: misc.formatDate,\n  isZeroBytes8: misc.isZeroBytes8,\n  isZeroBytes32: misc.isZeroBytes32,\n  isZeroAddress: misc.isZeroAddress,\n  isZeroString: misc.isZeroString,\n  isZeroUint: misc.isZeroUint,\n  isInvalidOpcodeEx: misc.isInvalidOpcodeEx,\n  lifWei2Lif: misc.lifWei2Lif,\n  lif2LifWei: misc.lif2LifWei,\n  currencyCodeToHex: misc.currencyCodeToHex,\n  bytes32ToString: misc.bytes32ToString,\n  priceToUint: misc.priceToUint,\n  bnToPrice: misc.bnToPrice,\n  locationToUint: misc.locationToUint,\n  locationFromUint: misc.locationFromUint,\n  addGasMargin: misc.addGasMargin,\n  getInstance: misc.getInstance,\n  fundAccount: misc.fundAccount,\n  jsArrayFromSolidityArray: misc.jsArrayFromSolidityArray,\n  pretty: misc.pretty\n}\n",
     "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/util/index.js",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/libs/util/index.js",
     "access": "public",
     "description": null,
     "lineNumber": 1
   },
   {
-    "__docId__": 150,
+    "__docId__": 127,
     "kind": "variable",
     "name": "hotel",
     "memberof": "libs/util/index.js",
@@ -3879,7 +3421,7 @@
     "ignore": true
   },
   {
-    "__docId__": 151,
+    "__docId__": 128,
     "kind": "variable",
     "name": "misc",
     "memberof": "libs/util/index.js",
@@ -3900,18 +3442,18 @@
     "ignore": true
   },
   {
-    "__docId__": 152,
+    "__docId__": 129,
     "kind": "file",
     "name": "libs/util/misc.js",
     "content": "const utf8 = require('utf8');\n\nconst WTIndexContract = require('../../build/contracts/WTIndex.json');\nconst HotelContract = require('../../build/contracts/Hotel.json');\nconst UnitTypeContract = require('../../build/contracts/UnitType.json');\nconst UnitContract = require('../../build/contracts/Unit.json');\nconst PrivateCallContract = require('../../build/contracts/PrivateCall.json');\nconst LifTokenContract = require('../../build/contracts/LifToken.json');\n\nconst abiDecoder = require('abi-decoder');\nconst moment = require('moment');\nconst print = JSON.stringify;\n\n// -------------------------- ABI Decoder / ABI Tables / Binaries ----------------------------------\n\nabiDecoder.addABI(PrivateCallContract.abi);\nabiDecoder.addABI(LifTokenContract.abi);\nabiDecoder.addABI(HotelContract.abi);\nabiDecoder.addABI(WTIndexContract.abi);\nabiDecoder.addABI(UnitTypeContract.abi);\nabiDecoder.addABI(UnitContract.abi);\n\nconst abis = {\n  WTIndex: WTIndexContract.abi,\n  Hotel: HotelContract.abi,\n  LifToken: LifTokenContract.abi,\n  HotelUnit: UnitContract.abi,\n  HotelUnitType: UnitTypeContract.abi\n};\n\nconst binaries = {\n  WTIndex: WTIndexContract.unlinked_binary,\n  Hotel: HotelContract.unlinked_binary,\n  LifToken: LifTokenContract.unlinked_binary,\n  HotelUnit: UnitContract.unlinked_binary,\n  HotelUnitType: UnitTypeContract.unlinked_binary\n}\n\n// --------------------------- Constants / Converters / Type Helpers -------------------------------\n\nconst zeroBytes8 = '0x0000000000000000';\nconst zeroAddress = '0x0000000000000000000000000000000000000000';\nconst zeroBytes32 = '0x0000000000000000000000000000000000000000000000000000000000000000';\n\n\n// Returns the date from a single integer in format DD/MM/YYYY\nfunction parseDate(date){\n  return moment([1970, 0, 1]).add(date, 'days').toDate();\n};\n\n// Returns the date formatted in days since 1970 0 1\nfunction formatDate(date){\n  return Math.round(new Date(date).getTime()/86400000);\n};\n\n\nfunction isZeroBytes8(val){\n  return val === zeroBytes8;\n}\n\nfunction isZeroBytes32(val){\n  return val === zeroBytes32;\n};\n\nfunction isZeroAddress(val){\n  return val === zeroAddress;\n};\n\nfunction isZeroString(val){\n  return (val.length) ? false : true;\n};\n\nfunction isZeroUint(val){\n  return parseInt(val) === 0;\n};\n\nfunction isInvalidOpcodeEx(e) {\n  return e.message.search('invalid opcode') >= 0;\n};\n\nfunction currencyCodeToHex(code, context){\n  if (typeof code !== 'number')\n    throw new Error();\n\n  const hex = context.web3.utils.toHex(code);\n  return context.web3.utils.padLeft(hex, 16);\n}\n\nfunction priceToUint(price){\n  return price.toFixed(2) * 100;\n}\n\nfunction bnToPrice(uint){\n  uint = (typeof uint === 'Object') ? uint.toNumber() : uint;\n  return (uint/100).toFixed(2);\n}\n\nfunction lifWei2Lif(value, context){\n  return context.web3.utils.fromWei(value, 'ether');\n};\n\nfunction lif2LifWei(value, context){\n  return context.web3.utils.toWei(value, 'ether');\n};\n\nfunction locationToUint(longitude, latitude){\n  return {\n    long : Math.round((90 + longitude) * 10e5),\n    lat: Math.round((180 + latitude) * 10e5),\n  }\n};\n\nfunction locationFromUint(longitude, latitude){\n  latitude = parseInt(latitude);\n  longitude = parseInt(longitude);\n  return {\n    lat: parseFloat((latitude - (180 * 10e5)) / 10e5).toFixed(6),\n    long: parseFloat((longitude - (90 * 10e5)) / 10e5).toFixed(6)\n  }\n};\n\nfunction bytes32ToString(hex){\n  var str = \"\";\n  var i = 0, l = hex.length;\n  if (hex.substring(0, 2) === '0x') {\n      i = 2;\n  }\n  for (; i < l; i+=2) {\n      var code = parseInt(hex.substr(i, 2), 16);\n      if (code === 0)\n          break;\n      str += String.fromCharCode(code);\n  }\n\n  return utf8.decode(str);\n};\n\n//----------------------------------------- Web3 Helpers -------------------------------------------\n\nfunction addGasMargin(gas, context){\n  return Math.round(gas * context.gasMargin);\n}\n\nfunction getInstance(name, address, context){\n  const web3 = context.web3;\n  const abi = abis[name];\n  const contract = new web3.eth.Contract(abi, address);\n  return contract;\n};\n\nasync function fundAccount(from, to, amount, web3){\n  return web3.eth.sendTransaction({\n    from: from,\n    to: to,\n    value: web3.utils.toWei(amount, 'ether')\n  });\n};\n\n/**\n * Traverses a solidity array and returns an array of all its non-zero elements\n * @param {Function} getAtIndex reference to a getter method (e.g. getImage)\n * @param {Number}   length solidity array's length\n * @param {Function} zeroComparator e.g isZeroAddress\n * @return {Promise} Array\n */\nasync function jsArrayFromSolidityArray(getAtIndex, length, zeroComparator){\n  const arr = [];\n\n  for (let i = 0; i < length; i++){\n    let item = await getAtIndex(i).call();\n    arr.push(item)\n  };\n\n  return (zeroComparator !== undefined)\n    ? arr.filter(item => !zeroComparator(item))\n    : arr;\n}\n\n// Debugging helper\nfunction pretty(msg, obj) {\n  console.log(`<------ ${msg} ------>\\n${print(obj, null, ' ')}\\n`)\n}\n\nmodule.exports = {\n\n  // Contract assets\n  abis: abis,\n  abiDecoder: abiDecoder,\n  binaries: binaries,\n\n  // Constants & Converters\n  parseDate: parseDate,\n  formatDate: formatDate,\n  zeroAddress: zeroAddress,\n  zeroBytes8: zeroBytes8,\n  zeroBytes32: zeroBytes32,\n  isZeroBytes8: isZeroBytes8,\n  isZeroBytes32: isZeroBytes32,\n  isZeroAddress: isZeroAddress,\n  isZeroString: isZeroString,\n  isZeroUint: isZeroUint,\n  isInvalidOpcodeEx: isInvalidOpcodeEx,\n  lifWei2Lif: lifWei2Lif,\n  lif2LifWei: lif2LifWei,\n  currencyCodeToHex: currencyCodeToHex,\n  priceToUint: priceToUint,\n  bnToPrice: bnToPrice,\n  bytes32ToString: bytes32ToString,\n  locationToUint: locationToUint,\n  locationFromUint: locationFromUint,\n\n  // Web3 helpers\n  addGasMargin: addGasMargin,\n  getInstance: getInstance,\n  fundAccount: fundAccount,\n  jsArrayFromSolidityArray: jsArrayFromSolidityArray,\n\n  // Debugging\n  pretty: pretty\n}\n",
     "static": true,
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/libs/util/misc.js",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/libs/util/misc.js",
     "access": "public",
     "description": null,
     "lineNumber": 1
   },
   {
-    "__docId__": 153,
+    "__docId__": 130,
     "kind": "variable",
     "name": "utf8",
     "memberof": "libs/util/misc.js",
@@ -3932,7 +3474,7 @@
     "ignore": true
   },
   {
-    "__docId__": 154,
+    "__docId__": 131,
     "kind": "variable",
     "name": "WTIndexContract",
     "memberof": "libs/util/misc.js",
@@ -3953,7 +3495,7 @@
     "ignore": true
   },
   {
-    "__docId__": 155,
+    "__docId__": 132,
     "kind": "variable",
     "name": "HotelContract",
     "memberof": "libs/util/misc.js",
@@ -3974,7 +3516,7 @@
     "ignore": true
   },
   {
-    "__docId__": 156,
+    "__docId__": 133,
     "kind": "variable",
     "name": "UnitTypeContract",
     "memberof": "libs/util/misc.js",
@@ -3995,7 +3537,7 @@
     "ignore": true
   },
   {
-    "__docId__": 157,
+    "__docId__": 134,
     "kind": "variable",
     "name": "UnitContract",
     "memberof": "libs/util/misc.js",
@@ -4016,7 +3558,7 @@
     "ignore": true
   },
   {
-    "__docId__": 158,
+    "__docId__": 135,
     "kind": "variable",
     "name": "PrivateCallContract",
     "memberof": "libs/util/misc.js",
@@ -4037,7 +3579,7 @@
     "ignore": true
   },
   {
-    "__docId__": 159,
+    "__docId__": 136,
     "kind": "variable",
     "name": "LifTokenContract",
     "memberof": "libs/util/misc.js",
@@ -4058,7 +3600,7 @@
     "ignore": true
   },
   {
-    "__docId__": 160,
+    "__docId__": 137,
     "kind": "variable",
     "name": "abiDecoder",
     "memberof": "libs/util/misc.js",
@@ -4079,7 +3621,7 @@
     "ignore": true
   },
   {
-    "__docId__": 161,
+    "__docId__": 138,
     "kind": "variable",
     "name": "moment",
     "memberof": "libs/util/misc.js",
@@ -4100,7 +3642,7 @@
     "ignore": true
   },
   {
-    "__docId__": 162,
+    "__docId__": 139,
     "kind": "variable",
     "name": "print",
     "memberof": "libs/util/misc.js",
@@ -4121,7 +3663,7 @@
     "ignore": true
   },
   {
-    "__docId__": 163,
+    "__docId__": 140,
     "kind": "variable",
     "name": "abis",
     "memberof": "libs/util/misc.js",
@@ -4142,7 +3684,7 @@
     "ignore": true
   },
   {
-    "__docId__": 164,
+    "__docId__": 141,
     "kind": "variable",
     "name": "binaries",
     "memberof": "libs/util/misc.js",
@@ -4163,7 +3705,7 @@
     "ignore": true
   },
   {
-    "__docId__": 165,
+    "__docId__": 142,
     "kind": "variable",
     "name": "zeroBytes8",
     "memberof": "libs/util/misc.js",
@@ -4184,7 +3726,7 @@
     "ignore": true
   },
   {
-    "__docId__": 166,
+    "__docId__": 143,
     "kind": "variable",
     "name": "zeroAddress",
     "memberof": "libs/util/misc.js",
@@ -4205,7 +3747,7 @@
     "ignore": true
   },
   {
-    "__docId__": 167,
+    "__docId__": 144,
     "kind": "variable",
     "name": "zeroBytes32",
     "memberof": "libs/util/misc.js",
@@ -4226,7 +3768,7 @@
     "ignore": true
   },
   {
-    "__docId__": 168,
+    "__docId__": 145,
     "kind": "function",
     "name": "parseDate",
     "memberof": "libs/util/misc.js",
@@ -4257,7 +3799,7 @@
     "ignore": true
   },
   {
-    "__docId__": 169,
+    "__docId__": 146,
     "kind": "function",
     "name": "formatDate",
     "memberof": "libs/util/misc.js",
@@ -4288,7 +3830,7 @@
     "ignore": true
   },
   {
-    "__docId__": 170,
+    "__docId__": 147,
     "kind": "function",
     "name": "isZeroBytes8",
     "memberof": "libs/util/misc.js",
@@ -4319,7 +3861,7 @@
     "ignore": true
   },
   {
-    "__docId__": 171,
+    "__docId__": 148,
     "kind": "function",
     "name": "isZeroBytes32",
     "memberof": "libs/util/misc.js",
@@ -4350,7 +3892,7 @@
     "ignore": true
   },
   {
-    "__docId__": 172,
+    "__docId__": 149,
     "kind": "function",
     "name": "isZeroAddress",
     "memberof": "libs/util/misc.js",
@@ -4381,7 +3923,7 @@
     "ignore": true
   },
   {
-    "__docId__": 173,
+    "__docId__": 150,
     "kind": "function",
     "name": "isZeroString",
     "memberof": "libs/util/misc.js",
@@ -4412,7 +3954,7 @@
     "ignore": true
   },
   {
-    "__docId__": 174,
+    "__docId__": 151,
     "kind": "function",
     "name": "isZeroUint",
     "memberof": "libs/util/misc.js",
@@ -4443,7 +3985,7 @@
     "ignore": true
   },
   {
-    "__docId__": 175,
+    "__docId__": 152,
     "kind": "function",
     "name": "isInvalidOpcodeEx",
     "memberof": "libs/util/misc.js",
@@ -4474,7 +4016,7 @@
     "ignore": true
   },
   {
-    "__docId__": 176,
+    "__docId__": 153,
     "kind": "function",
     "name": "currencyCodeToHex",
     "memberof": "libs/util/misc.js",
@@ -4511,7 +4053,7 @@
     "ignore": true
   },
   {
-    "__docId__": 177,
+    "__docId__": 154,
     "kind": "function",
     "name": "priceToUint",
     "memberof": "libs/util/misc.js",
@@ -4542,7 +4084,7 @@
     "ignore": true
   },
   {
-    "__docId__": 178,
+    "__docId__": 155,
     "kind": "function",
     "name": "bnToPrice",
     "memberof": "libs/util/misc.js",
@@ -4573,7 +4115,7 @@
     "ignore": true
   },
   {
-    "__docId__": 179,
+    "__docId__": 156,
     "kind": "function",
     "name": "lifWei2Lif",
     "memberof": "libs/util/misc.js",
@@ -4610,7 +4152,7 @@
     "ignore": true
   },
   {
-    "__docId__": 180,
+    "__docId__": 157,
     "kind": "function",
     "name": "lif2LifWei",
     "memberof": "libs/util/misc.js",
@@ -4647,7 +4189,7 @@
     "ignore": true
   },
   {
-    "__docId__": 181,
+    "__docId__": 158,
     "kind": "function",
     "name": "locationToUint",
     "memberof": "libs/util/misc.js",
@@ -4684,7 +4226,7 @@
     "ignore": true
   },
   {
-    "__docId__": 182,
+    "__docId__": 159,
     "kind": "function",
     "name": "locationFromUint",
     "memberof": "libs/util/misc.js",
@@ -4721,7 +4263,7 @@
     "ignore": true
   },
   {
-    "__docId__": 183,
+    "__docId__": 160,
     "kind": "function",
     "name": "bytes32ToString",
     "memberof": "libs/util/misc.js",
@@ -4752,7 +4294,7 @@
     "ignore": true
   },
   {
-    "__docId__": 184,
+    "__docId__": 161,
     "kind": "function",
     "name": "addGasMargin",
     "memberof": "libs/util/misc.js",
@@ -4789,7 +4331,7 @@
     "ignore": true
   },
   {
-    "__docId__": 185,
+    "__docId__": 162,
     "kind": "function",
     "name": "getInstance",
     "memberof": "libs/util/misc.js",
@@ -4832,7 +4374,7 @@
     "ignore": true
   },
   {
-    "__docId__": 186,
+    "__docId__": 163,
     "kind": "function",
     "name": "fundAccount",
     "memberof": "libs/util/misc.js",
@@ -4881,7 +4423,7 @@
     "ignore": true
   },
   {
-    "__docId__": 187,
+    "__docId__": 164,
     "kind": "function",
     "name": "jsArrayFromSolidityArray",
     "memberof": "libs/util/misc.js",
@@ -4938,7 +4480,7 @@
     "ignore": true
   },
   {
-    "__docId__": 188,
+    "__docId__": 165,
     "kind": "function",
     "name": "pretty",
     "memberof": "libs/util/misc.js",
@@ -4973,15 +4515,15 @@
   {
     "kind": "index",
     "content": "# Winding Tree Javascript Libraries for Hotels\n\nA JS interface to WindingTree's Ethereum smart-contract system for Hotels.\n\n## Install\n\n```sh\ngit clone https://github.com/windingtree/wt-js-libs --recursive\nnpm install\n```\n\n## Test\n\nTo run unit tests on the contracts `npm test` with `npm run testrpc` proccess running.\n\n```sh\nnpm test\n```\n\n## Docs\n\n```sh\nnpm run docs-build // Build documentation\nnpm run docs-view  // View documentation\n```\n\n\n",
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/README.md",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/README.md",
     "name": "./README.md",
     "static": true,
     "access": "public"
   },
   {
     "kind": "packageJSON",
-    "content": "{\n  \"name\": \"wt-js-libs\",\n  \"version\": \"0.1.0\",\n  \"description\": \"Javascript libraries to interact with the Winding Tree contracts\",\n  \"main\": \"truffle.js\",\n  \"directories\": {\n    \"test\": \"test\"\n  },\n  \"scripts\": {\n    \"test\": \"./scripts/test.sh\",\n    \"test-build\": \"./node_modules/mocha/bin/mocha test -- test-build\",\n    \"postinstall\": \"scripts/install.sh\",\n    \"recompile\": \"rm -rf build && ./node_modules/.bin/truffle migrate --reset\",\n    \"docs-build\": \"./node_modules/.bin/esdoc\",\n    \"docs-view\": \"open ./docs/index.html\",\n    \"build\": \"webpack --config build.web.config.js && webpack --config build.node.config.js\",\n    \"update-submodules\": \"git submodule update --recursive && npm run postinstall\",\n    \"pull-submodules\": \"git submodule foreach git pull origin master && npm run postinstall\"\n  },\n  \"keywords\": [\n    \"winding-tree\",\n    \"security\",\n    \"encryption\",\n    \"smart-contracts\"\n  ],\n  \"author\": \"Winding Tree Developers <dev@windingtree.com>\",\n  \"license\": \"MIT\",\n  \"browser\": {\n    \"fs\": false,\n    \"child_process\": false\n  },\n  \"dependencies\": {\n    \"abi-decoder\": \"^1.0.8\",\n    \"babel-core\": \"^6.17.0\",\n    \"babel-loader\": \"^6.2.0\",\n    \"babel-polyfill\": \"^6.23.0\",\n    \"babel-preset-es2015\": \"^6.3.13\",\n    \"chai\": \"^3.5.0\",\n    \"kbpgp\": \"^2.0.72\",\n    \"moment\": \"^2.18.1\",\n    \"web3\": \"^1.0.0-beta.23\",\n    \"zeppelin-solidity\": \"^1.2.0\"\n  },\n  \"devDependencies\": {\n    \"esdoc\": \"^1.0.3\",\n    \"esdoc-node\": \"^1.0.2\",\n    \"esdoc-standard-plugin\": \"^1.0.0\",\n    \"ethereumjs-testrpc\": \"3.9.2\",\n    \"truffle\": \"3.4.11\",\n    \"webpack\": \"^2.4.1\",\n    \"webpack-bundle-size-analyzer\": \"^2.7.0\"\n  }\n}\n",
-    "longname": "/Users/user/Sites/windingtree/wt-js-libs/package.json",
+    "content": "{\n  \"name\": \"wt-js-libs\",\n  \"version\": \"0.1.0\",\n  \"description\": \"Javascript libraries to interact with the Winding Tree contracts\",\n  \"main\": \"truffle.js\",\n  \"directories\": {\n    \"test\": \"test\"\n  },\n  \"scripts\": {\n    \"test\": \"./scripts/test.sh\",\n    \"test-build\": \"TEST_BUILD=true ./scripts/test.sh\",\n    \"postinstall\": \"scripts/install.sh\",\n    \"recompile\": \"rm -rf build && ./node_modules/.bin/truffle migrate --reset\",\n    \"docs-build\": \"./node_modules/.bin/esdoc\",\n    \"docs-view\": \"open ./docs/index.html\",\n    \"build\": \"webpack --config build.web.config.js && webpack --config build.node.config.js\",\n    \"update-submodules\": \"git submodule update --recursive && npm run postinstall\",\n    \"pull-submodules\": \"git submodule foreach git pull origin master && npm run postinstall\"\n  },\n  \"keywords\": [\n    \"winding-tree\",\n    \"security\",\n    \"encryption\",\n    \"smart-contracts\"\n  ],\n  \"author\": \"Winding Tree Developers <dev@windingtree.com>\",\n  \"license\": \"MIT\",\n  \"browser\": {\n    \"fs\": false,\n    \"child_process\": false\n  },\n  \"dependencies\": {\n    \"abi-decoder\": \"^1.0.8\",\n    \"babel-core\": \"^6.17.0\",\n    \"babel-loader\": \"^6.2.0\",\n    \"babel-polyfill\": \"^6.23.0\",\n    \"babel-preset-es2015\": \"^6.3.13\",\n    \"chai\": \"^3.5.0\",\n    \"kbpgp\": \"^2.0.72\",\n    \"moment\": \"^2.18.1\",\n    \"web3\": \"^1.0.0-beta.23\",\n    \"zeppelin-solidity\": \"^1.2.0\"\n  },\n  \"devDependencies\": {\n    \"esdoc\": \"^1.0.3\",\n    \"esdoc-node\": \"^1.0.2\",\n    \"esdoc-standard-plugin\": \"^1.0.0\",\n    \"ethereumjs-testrpc\": \"3.9.2\",\n    \"truffle\": \"3.4.11\",\n    \"webpack\": \"^2.4.1\",\n    \"webpack-bundle-size-analyzer\": \"^2.7.0\"\n  }\n}\n",
+    "longname": "/home/augusto/winding-tree/wt-js-libs/package.json",
     "name": "package.json",
     "static": true,
     "access": "public"
