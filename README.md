@@ -1,6 +1,10 @@
 # Winding Tree Javascript Libraries for Hotels
 
-A JS interface to WindingTree's Ethereum smart-contract system for Hotels.
+A JS interface to WindingTree's Ethereum smart-contracts for Hotels.
+
+## Documentation
+
+See documentation here https://windingtree.github.io/wt-js-libs/
 
 ## Install
 
@@ -11,13 +15,13 @@ npm install
 
 ## Test
 
-To run unit tests on the contracts `npm test` with `npm run testrpc` proccess running.
+To run unit tests on the contracts `npm test`, it will start a testrpc instance and run the tests in a private network.
 
 ```sh
 npm test
 ```
 
-## Docs
+## Build Docs
 
 ```sh
 npm run docs-build // Build documentation
