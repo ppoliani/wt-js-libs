@@ -11,7 +11,7 @@ const Web3 = require('web3');
 const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider);
 
-(process.argv.indexOf('test-build') > 0)
+(process.env.TEST_BUILD)
   ? HotelManager = require('../dist/node/HotelManager.js')
   : HotelManager = require('../libs/HotelManager.js');
 

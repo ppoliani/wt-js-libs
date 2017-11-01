@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "./scripts/test.sh",
-    "test-build": "./node_modules/mocha/bin/mocha test -- test-build",
+    "test-build": "TEST_BUILD=true ./scripts/test.sh",
     "postinstall": "scripts/install.sh",
     "recompile": "rm -rf build && ./node_modules/.bin/truffle migrate --reset",
     "docs-build": "./node_modules/.bin/esdoc",
