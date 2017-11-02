@@ -50,9 +50,9 @@ describe('HotelManager', function() {
     })
   });
 
-  describe('createHotel', function(){
+  describe('Index', function(){
 
-    it('should create a hotel | retrieve hotel from the blockchain', async function() {
+    it('createHotel: should create a hotel', async function() {
       await lib.createHotel(hotelName, hotelDescription);
       const hotels = await lib.getHotels();
       const address = Object.keys(hotels)[0];
@@ -60,7 +60,60 @@ describe('HotelManager', function() {
 
       assert.equal(hotel.name, hotelName);
       assert.equal(hotel.description, hotelDescription);
-    })
+    });
+
+    it('removeHotel: should remove a hotel', async function(){
+      await lib.createHotel(hotelName, hotelDescription);
+      let hotels = await lib.getHotels();
+      const address = lib.hotelsAddrs[0];
+
+      assert.isDefined(hotels[address]);
+
+      await lib.removeHotel(address);
+      hotels = await lib.getHotels();
+
+      assert.isNull(hotels);
+    });
+
+    it('should make multiple hotels manageable', async function(){
+      const nameA = 'a';
+      const nameB = 'b';
+      const descA = 'desc a';
+      const descB = 'desc b';
+      const typeName = "BASIC_ROOM";
+
+      // Create Hotels
+      await lib.createHotel(nameA, descA);
+      await lib.createHotel(nameB, descB);
+
+      let hotels = await lib.getHotels();
+
+      assert.equal(lib.hotelsAddrs.length, 2);
+
+      // Add unit types and units
+      let addressA = lib.hotelsAddrs[0];
+      let addressB = lib.hotelsAddrs[1];
+
+      await lib.addUnitType(addressA, typeName);
+      await lib.addUnit(addressA, typeName);
+      await lib.addUnitType(addressB, typeName);
+      await lib.addUnit(addressB, typeName);
+
+      hotels = await lib.getHotels();
+
+      assert.isDefined(hotels[addressA].unitTypes[typeName]);
+      assert.isDefined(hotels[addressB].unitTypes[typeName]);
+
+      assert.isDefined(hotels[addressA].unitAddresses[0]);
+      assert.isDefined(hotels[addressB].unitAddresses[0]);
+
+      // Unregister a hotel
+      await lib.removeHotel(addressA);
+      hotels = await lib.getHotels();
+
+      assert.isUndefined(hotels[addressA]);
+      assert.isDefined(hotels[addressB]);
+    });
   });
 
   describe('Hotel', function(){
