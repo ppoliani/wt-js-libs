@@ -142,17 +142,17 @@ function addGasMargin(gas, context){
 }
 
 function getInstance(name, address, context){
-  const web3 = context.web3;
   const abi = abis[name];
-  const contract = new web3.eth.Contract(abi, address);
+  const contract = new context.web3.eth.Contract(abi, address);
+  contract.setProvider(context.web3.currentProvider);
   return contract;
 };
 
-async function fundAccount(from, to, amount, web3){
-  return web3.eth.sendTransaction({
+async function fundAccount(from, to, amount, _web3){
+  return _web3.eth.sendTransaction({
     from: from,
     to: to,
-    value: web3.utils.toWei(amount, 'ether')
+    value: _web3.utils.toWei(amount, 'ether')
   });
 };
 
