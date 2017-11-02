@@ -6,6 +6,7 @@ module.exports = {
   devtool: "source-map",
   entry: {
     BookingData: "./libs/BookingData.js",
+    HotelEvents: "./libs/HotelEvents.js",
     HotelManager: "./libs/HotelManager.js",
     User: "./libs/User.js"
   },
