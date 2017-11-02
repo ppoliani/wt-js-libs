@@ -30,8 +30,10 @@
   <ul>
     
   <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/BookingData.js~BookingData.html">BookingData</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/HotelEvents.js~HotelEvents.html">HotelEvents</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/HotelManager.js~HotelManager.html">HotelManager</a></span></span></li>
 <li data-ice="doc"><span data-ice="kind" class="kind-class">C</span><span data-ice="name"><span><a href="class/libs/User.js~User.html">User</a></span></span></li>
+<li data-ice="doc"><span data-ice="kind" class="kind-variable">V</span><span data-ice="name"><span><a href="variable/index.html#static-variable-EventEmitter">EventEmitter</a></span></span></li>
 </ul>
 </div>
 </nav>
@@ -181,17 +183,17 @@ function addGasMargin(gas, context){
 }
 
 function getInstance(name, address, context){
-  const web3 = context.web3;
   const abi = abis[name];
-  const contract = new web3.eth.Contract(abi, address);
+  const contract = new context.web3.eth.Contract(abi, address);
+  contract.setProvider(context.web3.currentProvider);
   return contract;
 };
 
-async function fundAccount(from, to, amount, web3){
-  return web3.eth.sendTransaction({
+async function fundAccount(from, to, amount, _web3){
+  return _web3.eth.sendTransaction({
     from: from,
     to: to,
-    value: web3.utils.toWei(amount, &apos;ether&apos;)
+    value: _web3.utils.toWei(amount, &apos;ether&apos;)
   });
 };
 

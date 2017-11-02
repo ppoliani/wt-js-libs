@@ -4,9 +4,9 @@
 	else if(typeof define === 'function' && define.amd)
 		define([], factory);
 	else if(typeof exports === 'object')
-		exports["User"] = factory();
+		exports["HotelEvents"] = factory();
 	else
-		root["User"] = factory();
+		root["HotelEvents"] = factory();
 })(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -73,7 +73,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 225);
+/******/ 	return __webpack_require__(__webpack_require__.s = 224);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -50911,7 +50911,317 @@ module.exports = XMLHttpRequest;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(151), __webpack_require__(24)(module)))
 
 /***/ }),
-/* 221 */
+/* 221 */,
+/* 222 */,
+/* 223 */
+/***/ (function(module, exports) {
+
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+function EventEmitter() {
+  this._events = this._events || {};
+  this._maxListeners = this._maxListeners || undefined;
+}
+module.exports = EventEmitter;
+
+// Backwards-compat with node 0.10.x
+EventEmitter.EventEmitter = EventEmitter;
+
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._maxListeners = undefined;
+
+// By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+EventEmitter.defaultMaxListeners = 10;
+
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!isNumber(n) || n < 0 || isNaN(n))
+    throw TypeError('n must be a positive number');
+  this._maxListeners = n;
+  return this;
+};
+
+EventEmitter.prototype.emit = function(type) {
+  var er, handler, len, args, i, listeners;
+
+  if (!this._events)
+    this._events = {};
+
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events.error ||
+        (isObject(this._events.error) && !this._events.error.length)) {
+      er = arguments[1];
+      if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
+      }
+    }
+  }
+
+  handler = this._events[type];
+
+  if (isUndefined(handler))
+    return false;
+
+  if (isFunction(handler)) {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        args = Array.prototype.slice.call(arguments, 1);
+        handler.apply(this, args);
+    }
+  } else if (isObject(handler)) {
+    args = Array.prototype.slice.call(arguments, 1);
+    listeners = handler.slice();
+    len = listeners.length;
+    for (i = 0; i < len; i++)
+      listeners[i].apply(this, args);
+  }
+
+  return true;
+};
+
+EventEmitter.prototype.addListener = function(type, listener) {
+  var m;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events)
+    this._events = {};
+
+  // To avoid recursion in the case that type === "newListener"! Before
+  // adding it to the listeners, first emit "newListener".
+  if (this._events.newListener)
+    this.emit('newListener', type,
+              isFunction(listener.listener) ?
+              listener.listener : listener);
+
+  if (!this._events[type])
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  else if (isObject(this._events[type]))
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  else
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+
+  // Check for listener leak
+  if (isObject(this._events[type]) && !this._events[type].warned) {
+    if (!isUndefined(this._maxListeners)) {
+      m = this._maxListeners;
+    } else {
+      m = EventEmitter.defaultMaxListeners;
+    }
+
+    if (m && m > 0 && this._events[type].length > m) {
+      this._events[type].warned = true;
+      console.error('(node) warning: possible EventEmitter memory ' +
+                    'leak detected. %d listeners added. ' +
+                    'Use emitter.setMaxListeners() to increase limit.',
+                    this._events[type].length);
+      if (typeof console.trace === 'function') {
+        // not supported in IE 10
+        console.trace();
+      }
+    }
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  var fired = false;
+
+  function g() {
+    this.removeListener(type, g);
+
+    if (!fired) {
+      fired = true;
+      listener.apply(this, arguments);
+    }
+  }
+
+  g.listener = listener;
+  this.on(type, g);
+
+  return this;
+};
+
+// emits a 'removeListener' event iff the listener was removed
+EventEmitter.prototype.removeListener = function(type, listener) {
+  var list, position, length, i;
+
+  if (!isFunction(listener))
+    throw TypeError('listener must be a function');
+
+  if (!this._events || !this._events[type])
+    return this;
+
+  list = this._events[type];
+  length = list.length;
+  position = -1;
+
+  if (list === listener ||
+      (isFunction(list.listener) && list.listener === listener)) {
+    delete this._events[type];
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+
+  } else if (isObject(list)) {
+    for (i = length; i-- > 0;) {
+      if (list[i] === listener ||
+          (list[i].listener && list[i].listener === listener)) {
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0)
+      return this;
+
+    if (list.length === 1) {
+      list.length = 0;
+      delete this._events[type];
+    } else {
+      list.splice(position, 1);
+    }
+
+    if (this._events.removeListener)
+      this.emit('removeListener', type, listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  var key, listeners;
+
+  if (!this._events)
+    return this;
+
+  // not listening for removeListener, no need to emit
+  if (!this._events.removeListener) {
+    if (arguments.length === 0)
+      this._events = {};
+    else if (this._events[type])
+      delete this._events[type];
+    return this;
+  }
+
+  // emit removeListener for all listeners on all events
+  if (arguments.length === 0) {
+    for (key in this._events) {
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+    this.removeAllListeners('removeListener');
+    this._events = {};
+    return this;
+  }
+
+  listeners = this._events[type];
+
+  if (isFunction(listeners)) {
+    this.removeListener(type, listeners);
+  } else if (listeners) {
+    // LIFO order
+    while (listeners.length)
+      this.removeListener(type, listeners[listeners.length - 1]);
+  }
+  delete this._events[type];
+
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  var ret;
+  if (!this._events || !this._events[type])
+    ret = [];
+  else if (isFunction(this._events[type]))
+    ret = [this._events[type]];
+  else
+    ret = this._events[type].slice();
+  return ret;
+};
+
+EventEmitter.prototype.listenerCount = function(type) {
+  if (this._events) {
+    var evlistener = this._events[type];
+
+    if (isFunction(evlistener))
+      return 1;
+    else if (evlistener)
+      return evlistener.length;
+  }
+  return 0;
+};
+
+EventEmitter.listenerCount = function(emitter, type) {
+  return emitter.listenerCount(type);
+};
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+
+
+/***/ }),
+/* 224 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -50921,106 +51231,120 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
 var _ = __webpack_require__(220);
 var util = __webpack_require__(23);
 var HotelManager = __webpack_require__(152);
+var EventEmitter = __webpack_require__(223);
 
 /**
- * Methods that let managers and clients query the blockchain about hotel booking costs, history,
- * and status.
+ * Methods that let managers and clients subscribe to blockchain events emitted by booking
+ * activity.
  * @example
- *   const data = new BookingData({web3: web3})
+ *   const data = new HotelEvents({web3: web3})
  */
 
-var BookingData = function () {
+var HotelEvents = function (_EventEmitter) {
+  _inherits(HotelEvents, _EventEmitter);
 
   /**
    * Instantiates with a web3 object whose provider has been set
-   * @param  {Object} web3
-   * @return {BookingData}
+   * @param  {Object} _web3
+   * @return {HotelEvents}
    */
-  function BookingData(web3) {
-    _classCallCheck(this, BookingData);
+  function HotelEvents(_web3) {
+    _classCallCheck(this, HotelEvents);
 
-    this.context = {};
-    this.context.web3 = web3;
-    this.manager = new HotelManager({ web3: web3 });
+    var _this = _possibleConstructorReturn(this, (HotelEvents.__proto__ || Object.getPrototypeOf(HotelEvents)).call(this));
+
+    _this.subscriptions = [];
+    _this.web3 = _web3;
+    return _this;
   }
 
   /**
-   * Gets the national currency cost of a booking for a range of days. Check-in is on the
-   * first day, check-out on the last.
-   * @param  {Address}          unitAddress  Unit contract to edit
-   * @param  {Date }            fromDate     check-in date
-   * @param  {Number}           daysAmount   integer number of days to book.
-   * @return {Number}           Floating point cost ex: 100.00
-   * @example
-      const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
+   * Formats and re-emits Hotel contract events
+   * @param  {Object} err   web3 error object
+   * @param  {Obejct} event web3 event object
    */
 
 
-  _createClass(BookingData, [{
-    key: 'getCost',
-    value: async function getCost(unitAddress, fromDate, daysAmount) {
-      var fromDay = util.formatDate(fromDate);
-      var unit = util.getInstance('HotelUnit', unitAddress, this.context);
-      var cost = await unit.methods.getCost(fromDay, daysAmount).call();
-      return util.bnToPrice(cost);
+  _createClass(HotelEvents, [{
+    key: '_emitEvent',
+    value: function _emitEvent(err, event) {
+      if (!event) return;
+
+      var defaults = {
+        address: event.address,
+        transactionHash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        id: event.id
+      };
+
+      var eventArgsMap = {
+        "Book": {
+          from: event.returnValues.from,
+          unit: event.returnValues.unit,
+          fromDate: util.parseDate(event.returnValues.fromDay),
+          daysAmount: event.returnValues.daysAmount
+        },
+        "CallStarted": {
+          from: event.returnValues.from,
+          dataHash: event.returnValues.dataHash
+        },
+        "CallFinish": {
+          from: event.returnValues.from,
+          dataHash: event.returnValues.dataHash
+        }
+      };
+
+      var eventPacket = Object.assign(defaults, eventArgsMap[event.name]);
+      this.emit(event.name, eventPacket);
     }
 
     /**
-     * Gets the LifToken cost of a booking for a range of days. Check-in is on the first day,
-     * check-out on the last.
-     * @param  {Address}          unitAddress  Unit contract to edit
-     * @param  {Date }            fromDate     check-in date
-     * @param  {Number}           daysAmount   integer number of days to book.
-     * @return {Number}           Lif
-     * @example
-        const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
+     * Subscribes to `Book` `CallStarted` and `CallFinish` events emitted by hotel(s)
+     * contracts
+     * @param  {Address|Address[]} _addresses Hotel contracts to listen to
      */
 
   }, {
-    key: 'getLifCost',
-    value: async function getLifCost(unitAddress, fromDate, daysAmount) {
-      var fromDay = util.formatDate(fromDate);
-      var unit = util.getInstance('HotelUnit', unitAddress, this.context);
-      var wei = await unit.methods.getLifCost(fromDay, daysAmount).call();
+    key: 'subscribe',
+    value: function subscribe(_addresses) {
+      var _this2 = this;
 
-      return util.lifWei2Lif(wei, this.context);
-    }
+      var hotelsToMonitor = [];
 
-    /**
-     * Checks the availability of a unit for a range of days
-     * @param  {Address} unitAddress Unit contract address
-     * @param  {Date}    fromDate    check-in date
-     * @param  {Number}  daysAmount  number of days
-     * @return {Boolean}
-     */
+      Array.isArray(_addresses) ? hotelsToMonitor = _addresses : hotelsToMonitor.push(_addresses);
 
-  }, {
-    key: 'unitIsAvailable',
-    value: async function unitIsAvailable(unitAddress, fromDate, daysAmount) {
-      var unit = util.getInstance('HotelUnit', unitAddress, this.context);
-      var fromDay = util.formatDate(fromDate);
-      var range = _.range(fromDay, fromDay + daysAmount);
+      // Prevent duplicate subscriptions
+      hotelsToMonitor = hotelsToMonitor.filter(function (address) {
+        return _this2.subscriptions.findIndex(function (item) {
+          return item === address;
+        }) === -1;
+      });
 
-      var isActive = await unit.methods.active().call();
-      if (!isActive) return false;
+      if (!hotelsToMonitor.length) return;
 
+      var events = void 0;
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
 
       try {
-        for (var _iterator = range[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var day = _step.value;
+        for (var _iterator = hotelsToMonitor[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var address = _step.value;
 
-          var _ref = await this.manager.getReservation(unitAddress, day),
-              specialPrice = _ref.specialPrice,
-              specialLifPrice = _ref.specialLifPrice,
-              bookedBy = _ref.bookedBy;
+          var hotel = util.getInstance('Hotel', address, { web3: this.web3 });
 
-          if (!util.isZeroAddress(bookedBy)) return false;
+          hotel.events.Book({}, this._emitEvent.bind(this));
+          hotel.events.CallStarted({}, this._emitEvent.bind(this));
+          hotel.events.CallFinish({}, this._emitEvent.bind(this));
+
+          this.subscriptions.push(address);
         }
       } catch (err) {
         _didIteratorError = true;
@@ -51036,370 +51360,15 @@ var BookingData = function () {
           }
         }
       }
-
-      return true;
-    }
-
-    /**
-     * Gets the bookings history for hotel(s). If `fromBlock` is ommitted, method will search from the
-     * creation block of each Hotel contract.
-     * @param  {Address|Address[]} _addresses  Hotel contract address(es) to fetch bookings for
-     * @param  {Number}            fromBlock   Optional: block to begin searching from.
-     * @return {Promise}                       Array of bookings objects
-     * @example
-     * [
-     *   {
-     *     "transactionHash": "0x0ed3a16220e3b0cab...6ab8225ed0b6bad6ffc9640694d",
-     *     "blockNumber": 25,
-     *     "id": "log_f72920af",
-     *     "from": "0xc9F805a42837E78D5566f6A04Dba7167F8c6A830",
-     *     "unit": "0xcE85f98D04B25deaa27406492B6d6B747B837741",
-     *     "fromDate": "2020-10-10T07:00:00.000Z",
-     *     "daysAmount": "5"
-     *    }
-     * ]
-     */
-
-  }, {
-    key: 'getBookings',
-    value: async function getBookings(_addresses) {
-      var fromBlock = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-
-      var hotelsToQuery = [];
-      var bookings = [];
-
-      Array.isArray(_addresses) ? hotelsToQuery = _addresses : hotelsToQuery.push(_addresses);
-
-      if (!hotelsToQuery.length) return [];
-
-      var events = void 0;
-      var _iteratorNormalCompletion2 = true;
-      var _didIteratorError2 = false;
-      var _iteratorError2 = undefined;
-
-      try {
-        for (var _iterator2 = hotelsToQuery[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-          var address = _step2.value;
-
-          var hotel = util.getInstance('Hotel', address, this.context);
-
-          events = await hotel.getPastEvents('Book', {
-            fromBlock: fromBlock
-          });
-
-          events.forEach(function (event) {
-            return bookings.push({
-              transactionHash: event.transactionHash,
-              blockNumber: event.blockNumber,
-              id: event.id,
-              from: event.returnValues.from,
-              unit: event.returnValues.unit,
-              fromDate: util.parseDate(event.returnValues.fromDay),
-              daysAmount: event.returnValues.daysAmount
-            });
-          });
-        }
-      } catch (err) {
-        _didIteratorError2 = true;
-        _iteratorError2 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion2 && _iterator2.return) {
-            _iterator2.return();
-          }
-        } finally {
-          if (_didIteratorError2) {
-            throw _iteratorError2;
-          }
-        }
-      }
-
-      return bookings;
-    }
-  }, {
-    key: 'getBookingRequests',
-
-
-    /**
-     * Gets pending bookings requests for hotel(s). This is the set of all requests that have not
-     * yet been confirmed by a hotel manager. If `fromBlock` is ommitted, method will search from
-     * the creation block of each Hotel contract.
-     * @param  {Address|Address[]}  _addresses  Hotel contract address(es) to fetch bookings for
-     * @param  {Number}             fromBlock   Optional: block to begin searching from.
-     * @return {Promise}            Array of bookings objects
-     * @example
-     *  [
-     *    {
-     *     "transactionHash": "0x18c59c3f570d4013e0...470ead6560fdcc738a194d0",
-     *     "blockNumber": 26,
-     *     "id": "log_9b3eb752",
-     *     "from": "0x522701D427e1C2e039fdC32Db41972A46dFD7755",
-     *     "dataHash": "0x4077e0fee8018bb3dd7...ea91b3d7ced260761c73fa"
-     *    }
-     *   ]
-     */
-    value: async function getBookingRequests(_addresses) {
-      var fromBlock = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-
-      var hotelsToQuery = [];
-      var requests = [];
-
-      Array.isArray(_addresses) ? hotelsToQuery = _addresses : hotelsToQuery.push(_addresses);
-
-      if (!hotelsToQuery.length) return [];
-
-      var startedEvents = void 0;
-      var finishEvents = void 0;
-      var unfinished = void 0;
-
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
-
-      try {
-        for (var _iterator3 = hotelsToQuery[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var address = _step3.value;
-
-          var hotel = util.getInstance('Hotel', address, this.context);
-
-          startedEvents = await hotel.getPastEvents('CallStarted', {
-            fromBlock: fromBlock
-          });
-
-          finishEvents = await hotel.getPastEvents('CallFinish', {
-            fromBlock: fromBlock
-          });
-
-          // Filter out started events without a corresponding finishing event
-          unfinished = startedEvents.filter(function (event) {
-            var found = finishEvents.findIndex(function (item) {
-              return item.returnValues.dataHash === event.returnValues.dataHash;
-            });
-
-            return found === -1;
-          });
-
-          unfinished.forEach(function (event) {
-            return requests.push({
-              transactionHash: event.transactionHash,
-              blockNumber: event.blockNumber,
-              id: event.id,
-              from: event.returnValues.from,
-              dataHash: event.returnValues.dataHash
-            });
-          });
-        }
-      } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion3 && _iterator3.return) {
-            _iterator3.return();
-          }
-        } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
-          }
-        }
-      }
-
-      return requests;
     }
   }]);
 
-  return BookingData;
-}();
+  return HotelEvents;
+}(EventEmitter);
 
-module.exports = BookingData;
-
-/***/ }),
-/* 222 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-/**
- * Errors that a validator can consume, localized here so we can standardize their format
- * @type {Object}
- */
-module.exports = {
-  insufficientBalance: 'Token balance was too low to attempt this booking.',
-  notAvailable: 'Unit is not available for the requested dates'
-};
-
-/***/ }),
-/* 223 */,
-/* 224 */,
-/* 225 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var util = __webpack_require__(23);
-var errors = __webpack_require__(222);
-var BookingData = __webpack_require__(221);
-
-/**
- * Methods that allow hotel clients to make bookings.
- * @example
- *   const user = new User({
- *     account: '0xabcd...123',       // Client's account address
- *     gasMargin: 1.24,               // Multiple to increase gasEstimate by to ensure tx success.
- *     tokenAddress: '0x123...abcd',  // LifToken contract address
- *     web3: web3                     // Web3 object instantiated with a provider
- *   })
- */
-
-var User = function () {
-
-  /**
-   * Instantiates a User with an Ethereum account address, a LifToken address, and a Web3 instance
-   * whose provider has been set.
-   * @param  {Object} options
-   * @return {User}
-   */
-  function User(options) {
-    _classCallCheck(this, User);
-
-    this.context = {};
-    this.account = options.account || null;
-    this.context.web3 = options.web3;
-    this.context.gasMargin = options.gasMargin || 1;
-    this.token = util.getInstance('LifToken', options.tokenAddress, this.context);
-    this.bookings = new BookingData(options.web3);
-  }
-
-  /**
-   * Private method that composes a non-token booking's data for execution by sendTransaction
-   */
-
-
-  _createClass(User, [{
-    key: '_compileBooking',
-    value: async function _compileBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData) {
-      var hotel = util.getInstance('Hotel', hotelAddress, this.context);
-
-      var bookData = await hotel.methods.book(unitAddress, this.account, fromDay, daysAmount).encodeABI();
-
-      return await hotel.methods.beginCall(bookData, guestData).encodeABI();
-    }
-
-    /**
-     * Private method that composes a token based booking's data for execution by sendTransaction
-     */
-
-  }, {
-    key: '_compileLifBooking',
-    value: async function _compileLifBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData) {
-      var hotel = util.getInstance('Hotel', hotelAddress, this.context);
-
-      var bookData = await hotel.methods.bookWithLif(unitAddress, this.account, fromDay, daysAmount).encodeABI();
-
-      return await hotel.methods.beginCall(bookData, guestData).encodeABI();
-    }
-
-    /**
-     * Initiates a token-payment booking
-     * @param  {Address}    hotelAddress  Address of Hotel contract that controls the unit to book
-     * @param  {Address}    unitAddress   Address of Unit contract being booked
-     * @param  {Date}       fromDate      check in date
-     * @param  {Number}     daysAmount    number of days to book
-     * @param  {String}     guestData     hex encoded guest data
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'bookWithLif',
-    value: async function bookWithLif(hotelAddress, unitAddress, fromDate, daysAmount, guestData) {
-      var fromDay = util.formatDate(fromDate);
-
-      var cost = await this.bookings.getLifCost(unitAddress, fromDay, daysAmount);
-      var enough = await this.balanceCheck(cost);
-      var available = await this.bookings.unitIsAvailable(unitAddress, fromDate, daysAmount);
-
-      if (!enough) return Promise.reject(errors.insufficientBalance);
-
-      if (!available) return Promise.reject(errors.notAvailable);
-
-      var bookData = await this._compileLifBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData);
-
-      var weiCost = util.lif2LifWei(cost, this.context);
-      var approvalData = await this.token.methods.approveData(hotelAddress, weiCost, bookData).encodeABI();
-
-      var options = {
-        from: this.account,
-        to: this.token.options.address,
-        data: approvalData
-      };
-
-      var estimate = await this.context.web3.eth.estimateGas(options);
-      options.gas = util.addGasMargin(estimate, this.context);
-
-      return this.context.web3.eth.sendTransaction(options);
-    }
-  }, {
-    key: 'book',
-
-
-    /**
-     * Initiates a non-token booking
-     * @param  {Address}    hotelAddress  Address of Hotel contract that controls the unit to book
-     * @param  {Address}    unitAddress   Address of Unit contract being booked
-     * @param  {Date}       fromDate      check in date
-     * @param  {Number}     daysAmount    number of days to book
-     * @param  {String}     guestData     hex encoded guest data
-     * @return {Promievent}
-     */
-    value: async function book(hotelAddress, unitAddress, fromDate, daysAmount, guestData) {
-      var fromDay = util.formatDate(fromDate);
-
-      var data = await this._compileBooking(hotelAddress, unitAddress, fromDay, daysAmount, guestData);
-
-      var options = {
-        from: this.account,
-        to: hotelAddress,
-        data: data
-      };
-
-      var estimate = await this.context.web3.eth.estimateGas(options);
-      options.gas = util.addGasMargin(estimate, this.context);
-
-      return this.context.web3.eth.sendTransaction(options);
-    }
-
-    /**
-     * Returns true if user account's LifToken balance is greater than or equal to
-     * a booking's LifToken cost.
-     * @param  {Number}  cost    Lif 'ether'
-     * @return {Boolean}
-     */
-
-  }, {
-    key: 'balanceCheck',
-    value: async function balanceCheck(cost) {
-      var weiCost = util.lif2LifWei(cost, this.context);
-      weiCost = new this.context.web3.utils.BN(weiCost);
-
-      var balance = await this.token.methods.balanceOf(this.account).call();
-      balance = new this.context.web3.utils.BN(balance);
-
-      return balance.gte(weiCost);
-    }
-  }]);
-
-  return User;
-}();
-
-module.exports = User;
+module.exports = HotelEvents;
 
 /***/ })
 /******/ ]);
 });
-//# sourceMappingURL=User.js.map
+//# sourceMappingURL=HotelEvents.js.map
