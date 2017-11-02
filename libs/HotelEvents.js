@@ -7,25 +7,35 @@ const EventEmitter = require('events');
  * Methods that let managers and clients subscribe to blockchain events emitted by booking
  * activity.
  * @example
- *   const data = new HotelEvents({web3: web3})
+ *   const events = new HotelEvents({web3: web3})
  */
 class HotelEvents extends EventEmitter {
 
   /**
-   * Instantiates with a web3 object whose provider has been set
+   * HotelEvents constructor
    * @param  {Object} _web3
    * @return {HotelEvents}
    */
   constructor(_web3){
     super();
+
+    /**
+     * Addresses of the Hotel contracts whose events the class emits.
+     * @type {Array}
+     */
     this.subscriptions = [];
+
+    /**
+     * Web3 instance initialised with a provider.
+     * @type {Object}
+     */
     this.web3 = _web3;
   }
 
   /**
-   * Formats and re-emits Hotel contract events
+   * Hotel contract events formatter and publisher.
    * @param  {Object} err   web3 error object
-   * @param  {Obejct} event web3 event object
+   * @param  {Object} event web3 event object
    */
   _emitEvent(err, event){
     if(!event) return;
@@ -59,7 +69,7 @@ class HotelEvents extends EventEmitter {
   }
 
   /**
-   * Subscribes to `Book` `CallStarted` and `CallFinish` events emitted by hotel(s)
+   * Subscribes to `Book`, `CallStarted` and `CallFinish` events emitted by Hotel
    * contracts
    * @param  {Address|Address[]} _addresses Hotel contracts to listen to
    */

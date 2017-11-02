@@ -6,6 +6,18 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "wt-js-libs/libs/hotelevents.js~eventemitter",
+    "variable/index.html#static-variable-EventEmitter",
+    "<span>EventEmitter</span> <span class=\"search-result-import-path\">wt-js-libs/libs/HotelEvents.js</span>",
+    "variable"
+  ],
+  [
+    "wt-js-libs/libs/hotelevents.js~hotelevents",
+    "class/libs/HotelEvents.js~HotelEvents.html",
+    "<span>HotelEvents</span> <span class=\"search-result-import-path\">wt-js-libs/libs/HotelEvents.js</span>",
+    "class"
+  ],
+  [
     "wt-js-libs/libs/hotelmanager.js~hotelmanager",
     "class/libs/HotelManager.js~HotelManager.html",
     "<span>HotelManager</span> <span class=\"search-result-import-path\">wt-js-libs/libs/HotelManager.js</span>",
@@ -352,6 +364,42 @@ window.esdocSearchIndex = [
     "class/libs/BookingData.js~BookingData.html#instance-method-unitIsAvailable",
     "libs/BookingData.js~BookingData#unitIsAvailable",
     "method"
+  ],
+  [
+    "libs/hotelevents.js",
+    "file/libs/HotelEvents.js.html",
+    "libs/HotelEvents.js",
+    "file"
+  ],
+  [
+    "libs/hotelevents.js~hotelevents#_emitevent",
+    "class/libs/HotelEvents.js~HotelEvents.html#instance-method-_emitEvent",
+    "libs/HotelEvents.js~HotelEvents#_emitEvent",
+    "method"
+  ],
+  [
+    "libs/hotelevents.js~hotelevents#constructor",
+    "class/libs/HotelEvents.js~HotelEvents.html#instance-constructor-constructor",
+    "libs/HotelEvents.js~HotelEvents#constructor",
+    "method"
+  ],
+  [
+    "libs/hotelevents.js~hotelevents#subscribe",
+    "class/libs/HotelEvents.js~HotelEvents.html#instance-method-subscribe",
+    "libs/HotelEvents.js~HotelEvents#subscribe",
+    "method"
+  ],
+  [
+    "libs/hotelevents.js~hotelevents#subscriptions",
+    "class/libs/HotelEvents.js~HotelEvents.html#instance-member-subscriptions",
+    "libs/HotelEvents.js~HotelEvents#subscriptions",
+    "member"
+  ],
+  [
+    "libs/hotelevents.js~hotelevents#web3",
+    "class/libs/HotelEvents.js~HotelEvents.html#instance-member-web3",
+    "libs/HotelEvents.js~HotelEvents#web3",
+    "member"
   ],
   [
     "libs/hotelmanager.js",
