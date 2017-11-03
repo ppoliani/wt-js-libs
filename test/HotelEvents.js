@@ -42,7 +42,7 @@ describe('HotelEvents', function() {
     const fromDate = new Date('10/10/2020');
     const daysAmount = 5;
     const price = 1;
-    const guestData = web3.utils.toHex('guestData');
+    const guestData = 'guestData';
 
     beforeEach(async function() {
       ({
@@ -72,6 +72,7 @@ describe('HotelEvents', function() {
         assert.isNumber(event.blockNumber);
         assert.isString(event.id);
 
+        assert.equal(event.guestData, guestData);
         assert.equal(event.address, hotel.options.address);
         assert.equal(event.from, user.account);
         assert.equal(event.fromDate.toString(), fromDate.toString());

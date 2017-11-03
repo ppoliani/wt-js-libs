@@ -31,6 +31,8 @@ module.exports = {
   bnToPrice: misc.bnToPrice,
   locationToUint: misc.locationToUint,
   locationFromUint: misc.locationFromUint,
+  getLifGuestData: misc.getLifGuestData,
+  getGuestData: misc.getGuestData,
   addGasMargin: misc.addGasMargin,
   getInstance: misc.getInstance,
   fundAccount: misc.fundAccount,

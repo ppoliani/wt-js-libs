@@ -37,11 +37,14 @@ class HotelEvents extends EventEmitter {
    * @param  {Object} err   web3 error object
    * @param  {Object} event web3 event object
    */
-  _emitEvent(err, event){
+  async _emitEvent(err, event){
     if(!event) return;
+
+    const guestData = await util.getGuestData(event.transactionHash, {web3: this.web3});
 
     const defaults = {
       address: event.address,
+      guestData: guestData,
       transactionHash: event.transactionHash,
       blockNumber: event.blockNumber,
       id: event.id,

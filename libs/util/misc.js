@@ -139,6 +139,27 @@ function bytes32ToString(hex){
 
 //----------------------------------------- Web3 Helpers -------------------------------------------
 
+/**
+ * Extracts the guest data from an instant payment Booking initiated by
+ * a `token.approveData` transaction.
+ * @param  {String} hash    transaction hash, available on the `CallStarted` event
+ * @param  {Object} context execution context of the class ()
+ * @return {String}      plain text guest data. If this is JSON it will need to be parsed.
+ */
+async function getGuestData(hash, context){
+  let guestData;
+  let tx = await context.web3.eth.getTransaction(hash);
+  let method = abiDecoder.decodeMethod(tx.input);
+
+  if (method.name === 'approveData'){
+    const paramData = method.params.filter(call => call.name === 'data')[0].value;
+    method = abiDecoder.decodeMethod(paramData);
+  }
+
+  guestData = method.params.filter(call => call.name === 'privateData')[0].value;
+  return context.web3.utils.toUtf8(guestData);
+}
+
 async function addGasMargin(gas, context){
   const id = await context.web3.eth.net.getId();
   return (id === testnetId)
@@ -215,6 +236,7 @@ module.exports = {
   locationFromUint: locationFromUint,
 
   // Web3 helpers
+  getGuestData: getGuestData,
   addGasMargin: addGasMargin,
   getInstance: getInstance,
   fundAccount: fundAccount,
