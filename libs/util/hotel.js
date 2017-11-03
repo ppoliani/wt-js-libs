@@ -22,7 +22,6 @@ const {
  * @param  {String} data    hex string: output of `instance.method.xyz().encodeABI()`
  * @param  {Number} index   position of hotel in the WTIndex registry
  * @param  {Object} context Hotel class context
- * @param  {Number} gas     Hardcoded gas limit, used in contexts where estimations fail.
  * @return {Promievent}
  */
 async function execute(data, index, context){
