@@ -56,7 +56,13 @@ class HotelManager {
       .getHotelsByManager(this.owner)
       .call();
 
+    this.hotelsAddrs = this.hotelsAddrs.filter( addr => !util.isZeroAddress(addr));
+
+    if (!this.hotelsAddrs.length)
+      return null;
+
     this.hotels = {};
+
     for (let address of this.hotelsAddrs){
       await this.getHotel(address)
     }
@@ -151,9 +157,36 @@ class HotelManager {
     const options = {
       from: this.owner,
       to: this.WTIndex.options.address,
-      gas: util.addGasMargin(estimate, this.context),
+      gas: await util.addGasMargin(estimate, this.context),
       data: data
     }
+
+    return this.web3.eth.sendTransaction(options);
+  }
+
+  /**
+   * Removes a hotel from the WTIndex registry
+   * @param  {Address} address address of Hotel contract to de-list
+   * @return {Promievent}
+   */
+  async removeHotel(address){
+    const {
+      hotel,
+      index
+    } = await util.getHotelAndIndex(address, this.context);
+
+    const data = await this.WTIndex.methods
+      .removeHotel(index)
+      .encodeABI();
+
+    const options = {
+      from: this.owner,
+      to: this.WTIndex.options.address,
+      data: data
+    };
+
+    const estimate = await this.web3.eth.estimateGas(options);
+    options.gas = await util.addGasMargin(estimate, this.context);
 
     return this.web3.eth.sendTransaction(options);
   }
@@ -303,7 +336,7 @@ class HotelManager {
       .removeUnitType(typeHex, typeIndex)
       .encodeABI();
 
-    return util.execute(data, index, this.context, 400000); //<- testrpc bug estimating deletions?
+    return util.execute(data, index, this.context);
   }
 
   /**

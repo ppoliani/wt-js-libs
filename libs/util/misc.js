@@ -38,6 +38,8 @@ const binaries = {
 
 // --------------------------- Constants / Converters / Type Helpers -------------------------------
 
+const testnetId = 77;
+const defaultGas = 4700000;
 const zeroBytes8 = '0x0000000000000000';
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const zeroBytes32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -137,8 +139,11 @@ function bytes32ToString(hex){
 
 //----------------------------------------- Web3 Helpers -------------------------------------------
 
-function addGasMargin(gas, context){
-  return Math.round(gas * context.gasMargin);
+async function addGasMargin(gas, context){
+  const id = await context.web3.eth.net.getId();
+  return (id === testnetId)
+    ? defaultGas
+    : Math.round(gas * context.gasMargin);
 }
 
 function getInstance(name, address, context){

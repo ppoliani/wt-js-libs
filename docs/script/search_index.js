@@ -540,6 +540,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "libs/hotelmanager.js~hotelmanager#removehotel",
+    "class/libs/HotelManager.js~HotelManager.html#instance-method-removeHotel",
+    "libs/HotelManager.js~HotelManager#removeHotel",
+    "method"
+  ],
+  [
     "libs/hotelmanager.js~hotelmanager#removeunit",
     "class/libs/HotelManager.js~HotelManager.html#instance-method-removeUnit",
     "libs/HotelManager.js~HotelManager#removeUnit",

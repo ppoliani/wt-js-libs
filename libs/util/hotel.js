@@ -22,10 +22,9 @@ const {
  * @param  {String} data    hex string: output of `instance.method.xyz().encodeABI()`
  * @param  {Number} index   position of hotel in the WTIndex registry
  * @param  {Object} context Hotel class context
- * @param  {Number} gas     Hardcoded gas limit, used in contexts where estimations fail.
  * @return {Promievent}
  */
-async function execute(data, index, context, gas){
+async function execute(data, index, context){
   const callData = await context.WTIndex.methods
     .callHotel(index, data)
     .encodeABI();
@@ -37,7 +36,7 @@ async function execute(data, index, context, gas){
   };
 
   const estimate = await context.web3.eth.estimateGas(options);
-  options.gas = gas || addGasMargin(estimate, context);
+  options.gas = await addGasMargin(estimate, context);
 
   return context.web3.eth.sendTransaction(options);
 }
@@ -122,7 +121,7 @@ async function deployContract(instance, deployOptions, context){
   };
 
   estimate = await context.web3.eth.estimateGas(options);
-  options.gas = addGasMargin(estimate, context);
+  options.gas = await addGasMargin(estimate, context);
 
   return context.web3.eth.sendTransaction(options);
 }
