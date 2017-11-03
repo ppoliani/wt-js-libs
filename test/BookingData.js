@@ -16,14 +16,10 @@ const web3 = new Web3(provider);
   : HotelManager = require('../libs/HotelManager.js');
 
 describe('BookingData', function() {
-  const defaultGas = 400000;
-
   let Manager;
   let token;
   let index;
   let accounts;
-  let fundingSource;
-  let daoAccount;
   let ownerAccount;
   let augusto;
   let jakub;
@@ -31,53 +27,16 @@ describe('BookingData', function() {
   let unitAddress;
 
   before(async function(){
-    const wallet = await web3.eth.accounts.wallet.create(4);
     accounts = await web3.eth.getAccounts();
+    ({
+      index,
+      token,
+      wallet
+    } = await help.createWindingTreeEconomy(accounts, web3));
 
-    fundingSource = accounts[0];
-    ownerAccount = wallet["0"].address;
-    daoAccount = wallet["1"].address;
+    ownerAccount = wallet["1"].address;
     augusto = wallet["2"].address;
     jakub = wallet["3"].address;
-
-    await util.fundAccount(fundingSource, ownerAccount, 50, web3);
-    await util.fundAccount(fundingSource, daoAccount, 50, web3);
-    await util.fundAccount(fundingSource, augusto, 50, web3);
-    await util.fundAccount(fundingSource, jakub, 50, web3);
-
-    index = await util.deployIndex({
-      owner: daoAccount,
-      gasMargin: 1.5,
-      web3: web3
-    });
-
-    token = await help.runTokenGenerationEvent();
-
-    const setLifData = await index.methods
-      .setLifToken(token.options.address)
-      .encodeABI();
-
-    const setLifOptions = {
-      from: daoAccount,
-      to: index.options.address,
-      gas: defaultGas,
-      data: setLifData
-    };
-
-    await web3.eth.sendTransaction(setLifOptions);
-
-    tokenFundingOptions = {
-      token: token,
-      sender: fundingSource,
-      value: 500,
-      web3: web3
-    };
-
-    tokenFundingOptions.receiver = augusto;
-    await help.sendTokens(tokenFundingOptions);
-
-    tokenFundingOptions.receiver = jakub;
-    await help.sendTokens(tokenFundingOptions);
   })
 
   beforeEach( async function() {
