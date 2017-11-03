@@ -29,7 +29,7 @@ start_testrpc() {
     --account="0xfc452929dc8ffd956ebab936ed0f56d71a8c537b0393ea9da4807836942045c5,10000000000000000000000000000000000000000000000000000000000000000000000000000000"
   )
 
-  node_modules/.bin/testrpc -i 10 --gasLimit 6000000 "${accounts[@]}" > /dev/null &
+  node_modules/.bin/testrpc -i 77 --gasLimit 6000000 "${accounts[@]}" > /dev/null &
   testrpc_pid=$!
   sleep 5
 }

@@ -157,7 +157,7 @@ class HotelManager {
     const options = {
       from: this.owner,
       to: this.WTIndex.options.address,
-      gas: util.addGasMargin(estimate, this.context),
+      gas: await util.addGasMargin(estimate, this.context),
       data: data
     }
 
@@ -186,8 +186,7 @@ class HotelManager {
     };
 
     const estimate = await this.web3.eth.estimateGas(options);
-    options.gas = 400000;
-    //options.gas = util.addGasMargin(estimate, this.context);
+    options.gas = await util.addGasMargin(estimate, this.context);
 
     return this.web3.eth.sendTransaction(options);
   }
@@ -337,7 +336,7 @@ class HotelManager {
       .removeUnitType(typeHex, typeIndex)
       .encodeABI();
 
-    return util.execute(data, index, this.context, 400000); //<- testrpc bug estimating deletions?
+    return util.execute(data, index, this.context);
   }
 
   /**

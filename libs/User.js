@@ -102,7 +102,7 @@ class User {
     };
 
     const estimate = await this.context.web3.eth.estimateGas(options);
-    options.gas = util.addGasMargin(estimate, this.context);
+    options.gas = await util.addGasMargin(estimate, this.context);
 
     return this.context.web3.eth.sendTransaction(options);
   };
@@ -134,7 +134,7 @@ class User {
     };
 
     const estimate = await this.context.web3.eth.estimateGas(options);
-    options.gas = util.addGasMargin(estimate, this.context);
+    options.gas = await util.addGasMargin(estimate, this.context);
 
     return this.context.web3.eth.sendTransaction(options);
   }
