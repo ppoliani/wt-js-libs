@@ -121,9 +121,6 @@ class BookingData {
         fromBlock: fromBlock
       });
 
-      if (!events.length)
-        continue;
-
       for (let event of events){
         const guestData = await util.getGuestData(event.transactionHash, this.context);
 
@@ -192,9 +189,6 @@ class BookingData {
 
         return found === -1;
       })
-
-      if (!unfinished.length)
-        continue;
 
       for(let event of unfinished){
         const guestData = await util.getGuestData(event.transactionHash, this.context);

@@ -88,8 +88,6 @@ class HotelEvents extends EventEmitter {
       return this.subscriptions.findIndex(item => item === address) === -1;
     })
 
-    if (!hotelsToMonitor.length) return;
-
     let events;
     for (let address of hotelsToMonitor){
       const hotel = util.getInstance('Hotel', address, {web3: this.web3});
