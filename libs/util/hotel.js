@@ -120,7 +120,7 @@ async function deployContract(instance, deployOptions, context){
     data: data
   };
 
-  estimate = await context.web3.eth.estimateGas(options);
+  const estimate = await context.web3.eth.estimateGas(options);
   options.gas = await addGasMargin(estimate, context);
 
   return context.web3.eth.sendTransaction(options);
@@ -290,4 +290,3 @@ module.exports = {
   getHotelInfo: getHotelInfo,
   getUnitTypeIndex: getUnitTypeIndex,
 }
-
