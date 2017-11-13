@@ -121,15 +121,20 @@ class BookingData {
         fromBlock: fromBlock
       });
 
-      events.forEach(event => bookings.push({
-        transactionHash: event.transactionHash,
-        blockNumber: event.blockNumber,
-        id: event.id,
-        from: event.returnValues.from,
-        unit: event.returnValues.unit,
-        fromDate: util.parseDate(event.returnValues.fromDay),
-        daysAmount: event.returnValues.daysAmount
-      }));
+      for (let event of events){
+        const guestData = await util.getGuestData(event.transactionHash, this.context);
+
+        bookings.push({
+          guestData: guestData,
+          transactionHash: event.transactionHash,
+          blockNumber: event.blockNumber,
+          id: event.id,
+          from: event.returnValues.from,
+          unit: event.returnValues.unit,
+          fromDate: util.parseDate(event.returnValues.fromDay),
+          daysAmount: event.returnValues.daysAmount
+        })
+      };
     }
     return bookings;
   };
@@ -185,13 +190,18 @@ class BookingData {
         return found === -1;
       })
 
-      unfinished.forEach(event => requests.push({
-        transactionHash: event.transactionHash,
-        blockNumber: event.blockNumber,
-        id: event.id,
-        from: event.returnValues.from,
-        dataHash: event.returnValues.dataHash,
-      }));
+      for(let event of unfinished){
+        const guestData = await util.getGuestData(event.transactionHash, this.context);
+
+        requests.push({
+          guestData: guestData,
+          transactionHash: event.transactionHash,
+          blockNumber: event.blockNumber,
+          id: event.id,
+          from: event.returnValues.from,
+          dataHash: event.returnValues.dataHash,
+        })
+      };
     }
 
     return requests;

@@ -66,7 +66,7 @@ class User {
    * @param  {Address}    unitAddress   Address of Unit contract being booked
    * @param  {Date}       fromDate      check in date
    * @param  {Number}     daysAmount    number of days to book
-   * @param  {String}     guestData     hex encoded guest data
+   * @param  {String}     guestData     guest data
    * @return {Promievent}
    */
   async bookWithLif(hotelAddress, unitAddress, fromDate, daysAmount, guestData) {
@@ -75,6 +75,7 @@ class User {
     const cost = await this.bookings.getLifCost(unitAddress, fromDay, daysAmount);
     const enough = await this.balanceCheck(cost);
     const available = await this.bookings.unitIsAvailable(unitAddress, fromDate, daysAmount);
+    const guestDataHex = this.context.web3.utils.toHex(guestData);
 
     if (!enough)
       return Promise.reject(errors.insufficientBalance);
@@ -87,7 +88,7 @@ class User {
       unitAddress,
       fromDay,
       daysAmount,
-      guestData
+      guestDataHex
     );
 
     const weiCost = util.lif2LifWei(cost, this.context);
@@ -118,13 +119,14 @@ class User {
    */
   async book(hotelAddress, unitAddress, fromDate, daysAmount, guestData){
     const fromDay = util.formatDate(fromDate);
+    const guestDataHex = this.context.web3.utils.toHex(guestData);
 
     const data = await this._compileBooking(
       hotelAddress,
       unitAddress,
       fromDay,
       daysAmount,
-      guestData
+      guestDataHex
     );
 
     const options = {

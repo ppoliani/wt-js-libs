@@ -89,7 +89,7 @@ describe('BookingData', function() {
     const fromDate = new Date('10/10/2020');
     const daysAmount = 5;
     const price = 1;
-    const guestData = web3.utils.toHex('guestData');
+    const guestData = 'guestData';
 
     it('gets a booking for a hotel', async() => {
       await user.bookWithLif(
@@ -100,6 +100,7 @@ describe('BookingData', function() {
         guestData
       );
       const bookings = await data.getBookings(hotelAddress);
+
       const booking = bookings[0];
 
       assert.equal(bookings.length, 1);
@@ -107,6 +108,7 @@ describe('BookingData', function() {
       assert.isNumber(booking.blockNumber);
       assert.isString(booking.id);
 
+      assert.equal(booking.guestData, guestData);
       assert.equal(booking.from, user.account);
       assert.equal(booking.fromDate.toString(), fromDate.toString());
       assert.equal(booking.unit, unitAddress);
@@ -200,7 +202,7 @@ describe('BookingData', function() {
     const fromDate = new Date('10/10/2020');
     const daysAmount = 5;
     const price = 1;
-    const guestData = web3.utils.toHex('guestData');
+    const guestData = 'guestData';
 
     beforeEach(async () => await Manager.setRequireConfirmation(hotelAddress, true));
 
@@ -221,6 +223,7 @@ describe('BookingData', function() {
       assert.isString(request.id);
       assert.isString(request.dataHash);
 
+      assert.equal(request.guestData, guestData);
       assert.equal(request.from, user.account);
     });
 
