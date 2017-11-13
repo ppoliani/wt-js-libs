@@ -14,6 +14,7 @@ module.exports = {
 
 
   // Misc
+  abis: misc.abis,
   abiDecoder: misc.abiDecoder,
   parseDate: misc.parseDate,
   formatDate: misc.formatDate,
