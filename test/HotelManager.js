@@ -1,5 +1,5 @@
 const assert = require('chai').assert;
-const util = require('../libs/util/index');
+const utils = require('../libs/utils/index');
 const _ = require('lodash');
 
 const Web3 = require('web3');
@@ -31,12 +31,12 @@ describe('HotelManager', function() {
     ownerAccount = wallet["0"].address;
     daoAccount = wallet["1"].address;
 
-    await util.fundAccount(fundingSource, ownerAccount, 50, web3);
-    await util.fundAccount(fundingSource, daoAccount, 50, web3);
+    await utils.fundAccount(fundingSource, ownerAccount, 50, web3);
+    await utils.fundAccount(fundingSource, daoAccount, 50, web3);
   })
 
   beforeEach(async function() {
-    index = await util.deployIndex({
+    index = await utils.deployIndex({
       owner: daoAccount,
       gasMargin: gasMargin,
       web3: web3
@@ -352,7 +352,7 @@ describe('HotelManager', function() {
         daysAmount
       )
 
-      const fromDay = util.formatDate(fromDate);
+      const fromDay = utils.formatDate(fromDate);
       const range = _.range(fromDay, fromDay + daysAmount);
 
       for (let day of range) {
@@ -379,7 +379,7 @@ describe('HotelManager', function() {
         daysAmount
       )
 
-      const fromDay = util.formatDate(fromDate);
+      const fromDay = utils.formatDate(fromDate);
       const range = _.range(fromDay, fromDay + daysAmount);
 
       for (let day of range) {

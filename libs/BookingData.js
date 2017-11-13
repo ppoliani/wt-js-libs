@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const util = require('./util/index');
+const utils = require('./utils/index');
 const HotelManager = require('./HotelManager');
 
 /**
@@ -32,10 +32,10 @@ class BookingData {
       const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
    */
   async getCost(unitAddress, fromDate, daysAmount){
-    const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const fromDay = utils.formatDate(fromDate);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
     const cost = await unit.methods.getCost(fromDay, daysAmount).call();
-    return util.bnToPrice(cost);
+    return utils.bnToPrice(cost);
   }
 
   /**
@@ -49,11 +49,11 @@ class BookingData {
       const cost = await lib.getCost('0xab3..cd', new Date('5/31/2020'), 5);
    */
   async getLifCost(unitAddress, fromDate, daysAmount){
-    const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const fromDay = utils.formatDate(fromDate);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
     const wei = await unit.methods.getLifCost(fromDay, daysAmount).call();
 
-    return util.lifWei2Lif(wei, this.context);
+    return utils.lifWei2Lif(wei, this.context);
   }
 
   /**
@@ -64,8 +64,8 @@ class BookingData {
    * @return {Boolean}
    */
   async unitIsAvailable(unitAddress, fromDate, daysAmount){
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
-    const fromDay = util.formatDate(fromDate);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+    const fromDay = utils.formatDate(fromDate);
     const range = _.range(fromDay, fromDay + daysAmount);
 
     const isActive = await unit.methods.active().call();
@@ -79,7 +79,7 @@ class BookingData {
         bookedBy
       } = await this.manager.getReservation(unitAddress, day);
 
-      if (!util.isZeroAddress(bookedBy)) return false;
+      if (!utils.isZeroAddress(bookedBy)) return false;
     }
     return true;
   }
@@ -115,14 +115,14 @@ class BookingData {
 
     let events;
     for (let address of hotelsToQuery){
-      const hotel = util.getInstance('Hotel', address, this.context);
+      const hotel = utils.getInstance('Hotel', address, this.context);
 
       events = await hotel.getPastEvents('Book', {
         fromBlock: fromBlock
       });
 
       for (let event of events){
-        const guestData = await util.getGuestData(event.transactionHash, this.context);
+        const guestData = await utils.getGuestData(event.transactionHash, this.context);
 
         bookings.push({
           guestData: guestData,
@@ -131,7 +131,7 @@ class BookingData {
           id: event.id,
           from: event.returnValues.from,
           unit: event.returnValues.unit,
-          fromDate: util.parseDate(event.returnValues.fromDay),
+          fromDate: utils.parseDate(event.returnValues.fromDay),
           daysAmount: event.returnValues.daysAmount
         })
       };
@@ -172,7 +172,7 @@ class BookingData {
     let unfinished;
 
     for (let address of hotelsToQuery){
-      const hotel = util.getInstance('Hotel', address, this.context);
+      const hotel = utils.getInstance('Hotel', address, this.context);
 
       startedEvents = await hotel.getPastEvents('CallStarted', {
         fromBlock: fromBlock
@@ -191,7 +191,7 @@ class BookingData {
       })
 
       for(let event of unfinished){
-        const guestData = await util.getGuestData(event.transactionHash, this.context);
+        const guestData = await utils.getGuestData(event.transactionHash, this.context);
 
         requests.push({
           guestData: guestData,

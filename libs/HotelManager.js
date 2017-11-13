@@ -1,4 +1,4 @@
-const util = require('./util/index.js');
+const utils = require('./utils/index.js');
 
 /**
  * Methods that allow a manager to create / administrate hotels
@@ -24,7 +24,7 @@ class HotelManager {
     this.web3 = options.web3 || {};
     this.context = options;
 
-    this.WTIndex = util.getInstance('WTIndex', options.indexAddress, this.context);
+    this.WTIndex = utils.getInstance('WTIndex', options.indexAddress, this.context);
 
     this.context.WTIndex = this.WTIndex;
     this.context.gasMargin = options.gasMargin || 1;
@@ -39,8 +39,8 @@ class HotelManager {
    *  (we should have a doc link to JSON output here)
    */
   async getHotel(hotelAddress){
-    const hotel = util.getInstance('Hotel', hotelAddress, this.context);
-    this.hotels[hotelAddress] = await util.getHotelInfo(hotel, this.context);
+    const hotel = utils.getInstance('Hotel', hotelAddress, this.context);
+    this.hotels[hotelAddress] = await utils.getHotelInfo(hotel, this.context);
     return this.hotels[hotelAddress];
   }
 
@@ -56,7 +56,7 @@ class HotelManager {
       .getHotelsByManager(this.owner)
       .call();
 
-    this.hotelsAddrs = this.hotelsAddrs.filter( addr => !util.isZeroAddress(addr));
+    this.hotelsAddrs = this.hotelsAddrs.filter( addr => !utils.isZeroAddress(addr));
 
     if (!this.hotelsAddrs.length)
       return null;
@@ -84,13 +84,13 @@ class HotelManager {
    */
   async getReservation(unitAddress, day) {
     if (day instanceof Date)
-      day = util.formatDate(day);
+      day = utils.formatDate(day);
 
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
     const result = await unit.methods.getReservation(day).call();
 
-    const specialPrice = util.bnToPrice(result[0]);
-    const specialLifPrice = util.lifWei2Lif(result[1], this.context);
+    const specialPrice = utils.bnToPrice(result[0]);
+    const specialLifPrice = utils.lifWei2Lif(result[1], this.context);
     const bookedBy = result[2];
 
     return {
@@ -157,7 +157,7 @@ class HotelManager {
     const options = {
       from: this.owner,
       to: this.WTIndex.options.address,
-      gas: await util.addGasMargin(estimate, this.context),
+      gas: await utils.addGasMargin(estimate, this.context),
       data: data
     }
 
@@ -173,7 +173,7 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(address, this.context);
+    } = await utils.getHotelAndIndex(address, this.context);
 
     const data = await this.WTIndex.methods
       .removeHotel(index)
@@ -186,7 +186,7 @@ class HotelManager {
     };
 
     const estimate = await this.web3.eth.estimateGas(options);
-    options.gas = await util.addGasMargin(estimate, this.context);
+    options.gas = await utils.addGasMargin(estimate, this.context);
 
     return this.web3.eth.sendTransaction(options);
   }
@@ -202,13 +202,13 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const data = await hotel.methods
       .changeConfirmation(value)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -222,13 +222,13 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const data = await hotel.methods
       .editInfo(name, description)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -244,13 +244,13 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const data = await hotel.methods
       .editAddress(lineOne, lineTwo, zipCode, country)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -265,15 +265,15 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const {long, lat} = util.locationToUint(longitude, latitude);
+    const {long, lat} = utils.locationToUint(longitude, latitude);
 
     const data = await hotel.methods
       .editLocation(timezone, long, lat)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -287,13 +287,13 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const data = await hotel.methods
       .continueCall(reservationId)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -306,15 +306,15 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const instance = await util.deployUnitType(unitType, hotelAddress, this.context)
+    const instance = await utils.deployUnitType(unitType, hotelAddress, this.context)
 
     const data = hotel.methods
       .addUnitType(instance.options.address)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -327,16 +327,16 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const typeIndex = await util.getUnitTypeIndex(hotel, unitType, this.context);
+    const typeIndex = await utils.getUnitTypeIndex(hotel, unitType, this.context);
     const typeHex = this.web3.utils.toHex(unitType);
 
     const data = hotel.methods
       .removeUnitType(typeHex, typeIndex)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -353,11 +353,11 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const typeHex = this.web3.utils.toHex(unitType);
     const address = await hotel.methods.getUnitType(typeHex).call();
-    const instance = util.getInstance('HotelUnitType', address, this.context);
+    const instance = utils.getInstance('HotelUnitType', address, this.context);
 
     const editData = instance.methods
       .edit(description, minGuests, maxGuests, price)
@@ -367,7 +367,7 @@ class HotelManager {
       .callUnitType(typeHex, editData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context);
+    return utils.execute(hotelData, index, this.context);
   }
 
   /**
@@ -381,11 +381,11 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const typeHex = this.web3.utils.toHex(unitType);
     const address = await hotel.methods.getUnitType(typeHex).call();
-    const instance = util.getInstance('HotelUnitType', address, this.context);
+    const instance = utils.getInstance('HotelUnitType', address, this.context);
 
     const amenityData = instance.methods
       .addAmenity(amenity)
@@ -395,7 +395,7 @@ class HotelManager {
       .callUnitType(typeHex, amenityData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context);
+    return utils.execute(hotelData, index, this.context);
   }
 
   /**
@@ -409,11 +409,11 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const typeHex = this.web3.utils.toHex(unitType);
     const address = await hotel.methods.getUnitType(typeHex).call();
-    const instance = util.getInstance('HotelUnitType', address, this.context);
+    const instance = utils.getInstance('HotelUnitType', address, this.context);
 
     const amenityData = instance.methods
       .removeAmenity(amenity)
@@ -423,7 +423,7 @@ class HotelManager {
       .callUnitType(typeHex, amenityData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context);
+    return utils.execute(hotelData, index, this.context);
   }
 
   /**
@@ -436,15 +436,15 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const instance = await util.deployUnit(unitType, hotelAddress, this.context)
+    const instance = await utils.deployUnit(unitType, hotelAddress, this.context)
 
     const data = hotel.methods
       .addUnit(instance.options.address)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -457,13 +457,13 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
     const data = hotel.methods
       .removeUnit(unitAddress)
       .encodeABI();
 
-    return util.execute(data, index, this.context);
+    return utils.execute(data, index, this.context);
   }
 
   /**
@@ -476,9 +476,9 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
       .setActive(active)
@@ -488,7 +488,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context);
+    return utils.execute(hotelData, index, this.context);
   }
 
   /**
@@ -502,10 +502,10 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const uintPrice = util.priceToUint(price);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const uintPrice = utils.priceToUint(price);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
       .setDefaultPrice(uintPrice)
@@ -515,7 +515,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    await util.execute(hotelData, index, this.context);
+    await utils.execute(hotelData, index, this.context);
   }
 
   /**
@@ -529,10 +529,10 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const weiPrice = util.lif2LifWei(price, this.context);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const weiPrice = utils.lif2LifWei(price, this.context);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
       .setDefaultLifPrice(weiPrice)
@@ -542,7 +542,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    await util.execute(hotelData, index, this.context);
+    await utils.execute(hotelData, index, this.context);
   }
 
   /**
@@ -559,10 +559,10 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    code = util.currencyCodeToHex(code, this.context);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    code = utils.currencyCodeToHex(code, this.context);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
       .setCurrencyCode(code)
@@ -572,7 +572,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    await util.execute(hotelData, index, this.context);
+    await utils.execute(hotelData, index, this.context);
 
     // -------------------------------- NB ----------------------------------------
     // We probably need to iterate through a range of dates and
@@ -594,12 +594,12 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const fromDay = util.formatDate(fromDate);
-    const uintPrice = util.priceToUint(price);
+    const fromDay = utils.formatDate(fromDate);
+    const uintPrice = utils.priceToUint(price);
 
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
       .setSpecialPrice(uintPrice, fromDay, amountDays)
@@ -609,7 +609,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context);
+    return utils.execute(hotelData, index, this.context);
   }
 
   /**
@@ -626,11 +626,11 @@ class HotelManager {
     const {
       hotel,
       index
-    } = await util.getHotelAndIndex(hotelAddress, this.context);
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
-    const lifPrice = util.lif2LifWei(price, this.context);
-    const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance('HotelUnit', unitAddress, this.context);
+    const lifPrice = utils.lif2LifWei(price, this.context);
+    const fromDay = utils.formatDate(fromDate);
+    const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
 
     const unitData = unit.methods
       .setSpecialLifPrice(lifPrice, fromDay, amountDays)
@@ -640,7 +640,7 @@ class HotelManager {
       .callUnit(unit.options.address, unitData)
       .encodeABI();
 
-    return util.execute(hotelData, index, this.context);
+    return utils.execute(hotelData, index, this.context);
   }
 };
 

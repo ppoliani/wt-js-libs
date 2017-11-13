@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const util = require('./../../libs/util/index');
+const utils = require('./../../libs/utils/index');
 const help = require('./misc.js');
 const HotelManager = require('./../../libs/HotelManager');
 

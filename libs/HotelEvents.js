@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const util = require('./util/index');
+const utils = require('./utils/index');
 const HotelManager = require('./HotelManager');
 const EventEmitter = require('events');
 
@@ -40,7 +40,7 @@ class HotelEvents extends EventEmitter {
   async _emitEvent(err, event){
     if(!event) return;
 
-    const guestData = await util.getGuestData(event.transactionHash, {web3: this.web3});
+    const guestData = await utils.getGuestData(event.transactionHash, {web3: this.web3});
 
     const defaults = {
       address: event.address,
@@ -54,7 +54,7 @@ class HotelEvents extends EventEmitter {
       "Book": {
         from: event.returnValues.from,
         unit: event.returnValues.unit,
-        fromDate: util.parseDate(event.returnValues.fromDay),
+        fromDate: utils.parseDate(event.returnValues.fromDay),
         daysAmount: event.returnValues.daysAmount
       },
       "CallStarted": {
@@ -90,7 +90,7 @@ class HotelEvents extends EventEmitter {
 
     let events;
     for (let address of hotelsToMonitor){
-      const hotel = util.getInstance('Hotel', address, {web3: this.web3});
+      const hotel = utils.getInstance('Hotel', address, {web3: this.web3});
 
       hotel.events.Book({}, this._emitEvent.bind(this));
       hotel.events.CallStarted({}, this._emitEvent.bind(this));
