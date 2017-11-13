@@ -1,4 +1,4 @@
-const util = require('./../../libs/util/index');
+const utils = require('./../../libs/utils/index');
 const LifCrowdsale = require('../../build/contracts/LifCrowdsale.json');
 
 const Web3 = require('web3');
@@ -18,7 +18,7 @@ async function runTokenGenerationEvent(){
   const accounts = await web3.eth.getAccounts();
   const crowdsale = await simulateCrowdsale(rate, [40,30,20,10,0], accounts, 1);
   const tokenAddress = await crowdsale.methods.token().call();
-  return util.getInstance('LifToken', tokenAddress, {web3: web3});
+  return utils.getInstance('LifToken', tokenAddress, {web3: web3});
 }
 
 
@@ -34,7 +34,7 @@ async function runTokenGenerationEvent(){
  *  const rate = 100000000000;
   const crowdsale = await help.simulateCrowdsale(rate, [40,30,20,10,0], accounts, 1, web3);
   const tokenAddress = await crowdsale.methods.token().call();
-  const token = util.getInstance('LifToken', tokenAddress, web3);
+  const token = utils.getInstance('LifToken', tokenAddress, web3);
   const balance = await token.methods.balanceOf(account[0]).call();
  */
 async function simulateCrowdsale(rate, balances, accounts, weiPerUSD) {

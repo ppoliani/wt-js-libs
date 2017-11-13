@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const util = require('../../libs/util/index');
+const utils = require('../../libs/utils/index');
 
 /**
  * Generates a random string of len `length`
@@ -25,7 +25,7 @@ function randomString(length){
  * @return {Promise}
  */
 async function sendTokens(options){
-  const amount = util.lif2LifWei(options.value, {web3: options.web3});
+  const amount = utils.lif2LifWei(options.value, {web3: options.web3});
 
   return await options.token.methods
         .transfer(options.receiver, amount)

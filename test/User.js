@@ -1,7 +1,7 @@
 const User = require('../libs/User');
 const BookingData = require('../libs/BookingData');
 
-const util = require('../libs/util/index');
+const utils = require('../libs/utils/index');
 const help = require('./helpers/index');
 
 const assert = require('chai').assert;
@@ -84,7 +84,7 @@ describe('User', function(){
 
       user = new User(userOptions);
       data = new BookingData(web3);
-      hotel = util.getInstance('Hotel', hotelAddress, {web3: web3});
+      hotel = utils.getInstance('Hotel', hotelAddress, {web3: web3});
 
       await Manager.setRequireConfirmation(hotelAddress, true);
     });
@@ -178,7 +178,7 @@ describe('User', function(){
 
       user = new User(userOptions);
       data = new BookingData(web3);
-      hotel = util.getInstance('Hotel', hotelAddress, {web3: web3});
+      hotel = utils.getInstance('Hotel', hotelAddress, {web3: web3});
 
       await Manager.setDefaultLifPrice(hotelAddress, unitAddress, price);
     });
@@ -196,7 +196,7 @@ describe('User', function(){
       const book = events[0].returnValues;
       assert.equal(book.from, augusto);
       assert.equal(book.unit, unitAddress);
-      assert.equal(book.fromDay, util.formatDate(fromDate));
+      assert.equal(book.fromDay, utils.formatDate(fromDate));
       assert.equal(book.daysAmount, daysAmount);
     });
 
@@ -219,7 +219,7 @@ describe('User', function(){
     it('should make a booking: tokens transferred', async () => {
       let augustoInitialBalance = await token.methods.balanceOf(augusto).call();
       let hotelInitialBalance = await token.methods.balanceOf(hotelAddress).call();
-      let lifWeiCost = util.lif2LifWei(price * daysAmount, {web3: web3});
+      let lifWeiCost = utils.lif2LifWei(price * daysAmount, {web3: web3});
 
       augustoInitialBalance =  new web3.utils.BN(augustoInitialBalance);
       hotelInitialBalance = new web3.utils.BN(hotelInitialBalance);

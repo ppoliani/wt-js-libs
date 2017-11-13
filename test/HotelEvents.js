@@ -1,5 +1,5 @@
 const User = require('../libs/User');
-const util = require('../libs/util/index');
+const utils = require('../libs/utils/index');
 const help = require('./helpers/index');
 
 const assert = require('chai').assert;
@@ -61,7 +61,7 @@ describe('HotelEvents', function() {
       user = new User(userOptions);
       hotelEvents = new HotelEvents(web3);
 
-      hotel = util.getInstance('Hotel', hotelAddress, {web3: web3});
+      hotel = utils.getInstance('Hotel', hotelAddress, {web3: web3});
       await Manager.setDefaultLifPrice(hotelAddress, unitAddress, price);
     });
 

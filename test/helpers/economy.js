@@ -1,6 +1,6 @@
 const Token = require('./token');
 const misc = require('./misc');
-const util = require('../../libs/util/index');
+const utils = require('../../libs/utils/index');
 
 /**
  * Test fixture that creates a LifToken, a WTIndex whose owner is `accounts[0]`, and funds four
@@ -24,12 +24,12 @@ async function createWindingTreeEconomy(accounts, web3){
   const wallet = await web3.eth.accounts.wallet.create(4);
   const fundingSource = accounts[0];
 
-  await util.fundAccount(fundingSource, wallet["0"].address, 50, web3);
-  await util.fundAccount(fundingSource, wallet["1"].address, 50, web3);
-  await util.fundAccount(fundingSource, wallet["2"].address, 50, web3);
-  await util.fundAccount(fundingSource, wallet["3"].address, 50, web3);
+  await utils.fundAccount(fundingSource, wallet["0"].address, 50, web3);
+  await utils.fundAccount(fundingSource, wallet["1"].address, 50, web3);
+  await utils.fundAccount(fundingSource, wallet["2"].address, 50, web3);
+  await utils.fundAccount(fundingSource, wallet["3"].address, 50, web3);
 
-  const index = await util.deployIndex({
+  const index = await utils.deployIndex({
     owner: wallet["0"].address,
     gasMargin: 1.5,
     web3: web3

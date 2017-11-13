@@ -1,7 +1,7 @@
 const User = require('../libs/User');
 const BookingData = require('../libs/BookingData');
 
-const util = require('../libs/util/index');
+const utils = require('../libs/utils/index');
 const help = require('./helpers/index');
 
 const assert = require('chai').assert;
@@ -55,7 +55,7 @@ describe('BookingData', function() {
 
     user = new User(userOptions);
     data = new BookingData(web3);
-    hotel = util.getInstance('Hotel', hotelAddress, {web3: web3});
+    hotel = utils.getInstance('Hotel', hotelAddress, {web3: web3});
   })
 
   describe('getCost | getLifCost', function(){
