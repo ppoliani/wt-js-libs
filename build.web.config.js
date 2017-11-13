@@ -8,7 +8,8 @@ module.exports = {
     BookingData: "./libs/BookingData.js",
     HotelEvents: "./libs/HotelEvents.js",
     HotelManager: "./libs/HotelManager.js",
-    User: "./libs/User.js"
+    User: "./libs/User.js",
+    Utils: "./libs/utils/index.js"
   },
   module: {
     rules: [

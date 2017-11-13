@@ -1924,7 +1924,7 @@ function loadLocale(name) {
         try {
             oldLocale = globalLocale._abbr;
             var aliasedRequire = require;
-            __webpack_require__(218)("./" + name);
+            __webpack_require__(217)("./" + name);
             getSetGlobalLocale(oldLocale);
         } catch (e) {}
     }
@@ -4595,7 +4595,7 @@ return hooks;
 
 })));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(24)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(23)(module)))
 
 /***/ }),
 /* 1 */
@@ -6906,7 +6906,7 @@ module.exports = {
 var BigNumber = __webpack_require__(14);
 var utils = __webpack_require__(2);
 var c = __webpack_require__(16);
-var SolidityParam = __webpack_require__(25);
+var SolidityParam = __webpack_require__(26);
 
 
 /**
@@ -7140,7 +7140,7 @@ module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 var f = __webpack_require__(4);
-var SolidityParam = __webpack_require__(25);
+var SolidityParam = __webpack_require__(26);
 
 /**
  * SolidityType prototype is used to encode/decode solidity params of certain type
@@ -8602,7 +8602,7 @@ module.exports = Property;
  * @date 2015
  */
 
-var CryptoJS = __webpack_require__(198);
+var CryptoJS = __webpack_require__(197);
 var sha3 = __webpack_require__(30);
 
 module.exports = function (value, options) {
@@ -12918,13 +12918,41 @@ module.exports = {
 
 /***/ }),
 /* 23 */
+/***/ (function(module, exports) {
+
+module.exports = function(module) {
+	if(!module.webpackPolyfill) {
+		module.deprecate = function() {};
+		module.paths = [];
+		// module.parent = undefined by default
+		if(!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function() {
+				return module.i;
+			}
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
+
+
+/***/ }),
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var hotel = __webpack_require__(194);
-var misc = __webpack_require__(28);
+var hotel = __webpack_require__(152);
+var misc = __webpack_require__(25);
 
 module.exports = {
 
@@ -12965,498 +12993,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 24 */
-/***/ (function(module, exports) {
-
-module.exports = function(module) {
-	if(!module.webpackPolyfill) {
-		module.deprecate = function() {};
-		module.paths = [];
-		// module.parent = undefined by default
-		if(!module.children) module.children = [];
-		Object.defineProperty(module, "loaded", {
-			enumerable: true,
-			get: function() {
-				return module.l;
-			}
-		});
-		Object.defineProperty(module, "id", {
-			enumerable: true,
-			get: function() {
-				return module.i;
-			}
-		});
-		module.webpackPolyfill = 1;
-	}
-	return module;
-};
-
-
-/***/ }),
 /* 25 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/*
-    This file is part of web3.js.
-
-    web3.js is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    web3.js is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/** 
- * @file param.js
- * @author Marek Kotewicz <marek@ethdev.com>
- * @date 2015
- */
-
-var utils = __webpack_require__(2);
-
-/**
- * SolidityParam object prototype.
- * Should be used when encoding, decoding solidity bytes
- */
-var SolidityParam = function (value, offset) {
-    this.value = value || '';
-    this.offset = offset; // offset in bytes
-};
-
-/**
- * This method should be used to get length of params's dynamic part
- * 
- * @method dynamicPartLength
- * @returns {Number} length of dynamic part (in bytes)
- */
-SolidityParam.prototype.dynamicPartLength = function () {
-    return this.dynamicPart().length / 2;
-};
-
-/**
- * This method should be used to create copy of solidity param with different offset
- *
- * @method withOffset
- * @param {Number} offset length in bytes
- * @returns {SolidityParam} new solidity param with applied offset
- */
-SolidityParam.prototype.withOffset = function (offset) {
-    return new SolidityParam(this.value, offset);
-};
-
-/**
- * This method should be used to combine solidity params together
- * eg. when appending an array
- *
- * @method combine
- * @param {SolidityParam} param with which we should combine
- * @param {SolidityParam} result of combination
- */
-SolidityParam.prototype.combine = function (param) {
-    return new SolidityParam(this.value + param.value); 
-};
-
-/**
- * This method should be called to check if param has dynamic size.
- * If it has, it returns true, otherwise false
- *
- * @method isDynamic
- * @returns {Boolean}
- */
-SolidityParam.prototype.isDynamic = function () {
-    return this.offset !== undefined;
-};
-
-/**
- * This method should be called to transform offset to bytes
- *
- * @method offsetAsBytes
- * @returns {String} bytes representation of offset
- */
-SolidityParam.prototype.offsetAsBytes = function () {
-    return !this.isDynamic() ? '' : utils.padLeft(utils.toTwosComplement(this.offset).toString(16), 64);
-};
-
-/**
- * This method should be called to get static part of param
- *
- * @method staticPart
- * @returns {String} offset if it is a dynamic param, otherwise value
- */
-SolidityParam.prototype.staticPart = function () {
-    if (!this.isDynamic()) {
-        return this.value; 
-    } 
-    return this.offsetAsBytes();
-};
-
-/**
- * This method should be called to get dynamic part of param
- *
- * @method dynamicPart
- * @returns {String} returns a value if it is a dynamic param, otherwise empty string
- */
-SolidityParam.prototype.dynamicPart = function () {
-    return this.isDynamic() ? this.value : '';
-};
-
-/**
- * This method should be called to encode param
- *
- * @method encode
- * @returns {String}
- */
-SolidityParam.prototype.encode = function () {
-    return this.staticPart() + this.dynamicPart();
-};
-
-/**
- * This method should be called to encode array of params
- *
- * @method encodeList
- * @param {Array[SolidityParam]} params
- * @returns {String}
- */
-SolidityParam.encodeList = function (params) {
-    
-    // updating offsets
-    var totalOffset = params.length * 32;
-    var offsetParams = params.map(function (param) {
-        if (!param.isDynamic()) {
-            return param;
-        }
-        var offset = totalOffset;
-        totalOffset += param.dynamicPartLength();
-        return param.withOffset(offset);
-    });
-
-    // encode everything!
-    return offsetParams.reduce(function (result, param) {
-        return result + param.dynamicPart();
-    }, offsetParams.reduce(function (result, param) {
-        return result + param.staticPart();
-    }, ''));
-};
-
-
-
-module.exports = SolidityParam;
-
-
-
-/***/ }),
-/* 26 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/*
-    This file is part of web3.js.
-
-    web3.js is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    web3.js is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/** 
- * @file event.js
- * @author Marek Kotewicz <marek@ethdev.com>
- * @date 2014
- */
-
-var utils = __webpack_require__(2);
-var coder = __webpack_require__(15);
-var formatters = __webpack_require__(6);
-var sha3 = __webpack_require__(12);
-var Filter = __webpack_require__(17);
-var watches = __webpack_require__(19);
-
-/**
- * This prototype should be used to create event filters
- */
-var SolidityEvent = function (requestManager, json, address) {
-    this._requestManager = requestManager;
-    this._params = json.inputs;
-    this._name = utils.transformToFullName(json);
-    this._address = address;
-    this._anonymous = json.anonymous;
-};
-
-/**
- * Should be used to get filtered param types
- *
- * @method types
- * @param {Bool} decide if returned typed should be indexed
- * @return {Array} array of types
- */
-SolidityEvent.prototype.types = function (indexed) {
-    return this._params.filter(function (i) {
-        return i.indexed === indexed;
-    }).map(function (i) {
-        return i.type;
-    });
-};
-
-/**
- * Should be used to get event display name
- *
- * @method displayName
- * @return {String} event display name
- */
-SolidityEvent.prototype.displayName = function () {
-    return utils.extractDisplayName(this._name);
-};
-
-/**
- * Should be used to get event type name
- *
- * @method typeName
- * @return {String} event type name
- */
-SolidityEvent.prototype.typeName = function () {
-    return utils.extractTypeName(this._name);
-};
-
-/**
- * Should be used to get event signature
- *
- * @method signature
- * @return {String} event signature
- */
-SolidityEvent.prototype.signature = function () {
-    return sha3(this._name);
-};
-
-/**
- * Should be used to encode indexed params and options to one final object
- * 
- * @method encode
- * @param {Object} indexed
- * @param {Object} options
- * @return {Object} everything combined together and encoded
- */
-SolidityEvent.prototype.encode = function (indexed, options) {
-    indexed = indexed || {};
-    options = options || {};
-    var result = {};
-
-    ['fromBlock', 'toBlock'].filter(function (f) {
-        return options[f] !== undefined;
-    }).forEach(function (f) {
-        result[f] = formatters.inputBlockNumberFormatter(options[f]);
-    });
-
-    result.topics = [];
-
-    result.address = this._address;
-    if (!this._anonymous) {
-        result.topics.push('0x' + this.signature());
-    }
-
-    var indexedTopics = this._params.filter(function (i) {
-        return i.indexed === true;
-    }).map(function (i) {
-        var value = indexed[i.name];
-        if (value === undefined || value === null) {
-            return null;
-        }
-        
-        if (utils.isArray(value)) {
-            return value.map(function (v) {
-                return '0x' + coder.encodeParam(i.type, v);
-            });
-        }
-        return '0x' + coder.encodeParam(i.type, value);
-    });
-
-    result.topics = result.topics.concat(indexedTopics);
-
-    return result;
-};
-
-/**
- * Should be used to decode indexed params and options
- *
- * @method decode
- * @param {Object} data
- * @return {Object} result object with decoded indexed && not indexed params
- */
-SolidityEvent.prototype.decode = function (data) {
- 
-    data.data = data.data || '';
-    data.topics = data.topics || [];
-
-    var argTopics = this._anonymous ? data.topics : data.topics.slice(1);
-    var indexedData = argTopics.map(function (topics) { return topics.slice(2); }).join("");
-    var indexedParams = coder.decodeParams(this.types(true), indexedData); 
-
-    var notIndexedData = data.data.slice(2);
-    var notIndexedParams = coder.decodeParams(this.types(false), notIndexedData);
-    
-    var result = formatters.outputLogFormatter(data);
-    result.event = this.displayName();
-    result.address = data.address;
-
-    result.args = this._params.reduce(function (acc, current) {
-        acc[current.name] = current.indexed ? indexedParams.shift() : notIndexedParams.shift();
-        return acc;
-    }, {});
-
-    delete result.data;
-    delete result.topics;
-
-    return result;
-};
-
-/**
- * Should be used to create new filter object from event
- *
- * @method execute
- * @param {Object} indexed
- * @param {Object} options
- * @return {Object} filter object
- */
-SolidityEvent.prototype.execute = function (indexed, options, callback) {
-
-    if (utils.isFunction(arguments[arguments.length - 1])) {
-        callback = arguments[arguments.length - 1];
-        if(arguments.length === 2)
-            options = null;
-        if(arguments.length === 1) {
-            options = null;
-            indexed = {};
-        }
-    }
-    
-    var o = this.encode(indexed, options);
-    var formatter = this.decode.bind(this);
-    return new Filter(this._requestManager, o, watches.eth(), formatter, callback);
-};
-
-/**
- * Should be used to attach event to contract object
- *
- * @method attachToContract
- * @param {Contract}
- */
-SolidityEvent.prototype.attachToContract = function (contract) {
-    var execute = this.execute.bind(this);
-    var displayName = this.displayName();
-    if (!contract[displayName]) {
-        contract[displayName] = execute;
-    }
-    contract[displayName][this.typeName()] = this.execute.bind(this, contract);
-};
-
-module.exports = SolidityEvent;
-
-
-
-/***/ }),
-/* 27 */
-/***/ (function(module, exports) {
-
-/*
-    This file is part of web3.js.
-
-    web3.js is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    web3.js is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
-*/
-/** @file jsonrpc.js
- * @authors:
- *   Marek Kotewicz <marek@ethdev.com>
- *   Aaron Kumavis <aaron@kumavis.me>
- * @date 2015
- */
-
-// Initialize Jsonrpc as a simple object with utility functions.
-var Jsonrpc = {
-    messageId: 0
-};
-
-/**
- * Should be called to valid json create payload object
- *
- * @method toPayload
- * @param {Function} method of jsonrpc call, required
- * @param {Array} params, an array of method params, optional
- * @returns {Object} valid jsonrpc payload object
- */
-Jsonrpc.toPayload = function (method, params) {
-    if (!method)
-        console.error('jsonrpc method should be specified!');
-
-    // advance message ID
-    Jsonrpc.messageId++;
-
-    return {
-        jsonrpc: '2.0',
-        id: Jsonrpc.messageId,
-        method: method,
-        params: params || []
-    };
-};
-
-/**
- * Should be called to check if jsonrpc response is valid
- *
- * @method isValidResponse
- * @param {Object}
- * @returns {Boolean} true if response is valid, otherwise false
- */
-Jsonrpc.isValidResponse = function (response) {
-    return Array.isArray(response) ? response.every(validateSingleMessage) : validateSingleMessage(response);
-
-    function validateSingleMessage(message){
-      return !!message &&
-        !message.error &&
-        message.jsonrpc === '2.0' &&
-        typeof message.id === 'number' &&
-        message.result !== undefined; // only undefined is not valid json object
-    }
-};
-
-/**
- * Should be called to create batch payload object
- *
- * @method toBatchPayload
- * @param {Array} messages, an array of objects with method (required) and params (optional) fields
- * @returns {Array} batch payload
- */
-Jsonrpc.toBatchPayload = function (messages) {
-    return messages.map(function (message) {
-        return Jsonrpc.toPayload(message.method, message.params);
-    });
-};
-
-module.exports = Jsonrpc;
-
-
-
-/***/ }),
-/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -13707,6 +13244,469 @@ module.exports = {
   // Debugging
   pretty: pretty
 };
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+    This file is part of web3.js.
+
+    web3.js is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    web3.js is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/** 
+ * @file param.js
+ * @author Marek Kotewicz <marek@ethdev.com>
+ * @date 2015
+ */
+
+var utils = __webpack_require__(2);
+
+/**
+ * SolidityParam object prototype.
+ * Should be used when encoding, decoding solidity bytes
+ */
+var SolidityParam = function (value, offset) {
+    this.value = value || '';
+    this.offset = offset; // offset in bytes
+};
+
+/**
+ * This method should be used to get length of params's dynamic part
+ * 
+ * @method dynamicPartLength
+ * @returns {Number} length of dynamic part (in bytes)
+ */
+SolidityParam.prototype.dynamicPartLength = function () {
+    return this.dynamicPart().length / 2;
+};
+
+/**
+ * This method should be used to create copy of solidity param with different offset
+ *
+ * @method withOffset
+ * @param {Number} offset length in bytes
+ * @returns {SolidityParam} new solidity param with applied offset
+ */
+SolidityParam.prototype.withOffset = function (offset) {
+    return new SolidityParam(this.value, offset);
+};
+
+/**
+ * This method should be used to combine solidity params together
+ * eg. when appending an array
+ *
+ * @method combine
+ * @param {SolidityParam} param with which we should combine
+ * @param {SolidityParam} result of combination
+ */
+SolidityParam.prototype.combine = function (param) {
+    return new SolidityParam(this.value + param.value); 
+};
+
+/**
+ * This method should be called to check if param has dynamic size.
+ * If it has, it returns true, otherwise false
+ *
+ * @method isDynamic
+ * @returns {Boolean}
+ */
+SolidityParam.prototype.isDynamic = function () {
+    return this.offset !== undefined;
+};
+
+/**
+ * This method should be called to transform offset to bytes
+ *
+ * @method offsetAsBytes
+ * @returns {String} bytes representation of offset
+ */
+SolidityParam.prototype.offsetAsBytes = function () {
+    return !this.isDynamic() ? '' : utils.padLeft(utils.toTwosComplement(this.offset).toString(16), 64);
+};
+
+/**
+ * This method should be called to get static part of param
+ *
+ * @method staticPart
+ * @returns {String} offset if it is a dynamic param, otherwise value
+ */
+SolidityParam.prototype.staticPart = function () {
+    if (!this.isDynamic()) {
+        return this.value; 
+    } 
+    return this.offsetAsBytes();
+};
+
+/**
+ * This method should be called to get dynamic part of param
+ *
+ * @method dynamicPart
+ * @returns {String} returns a value if it is a dynamic param, otherwise empty string
+ */
+SolidityParam.prototype.dynamicPart = function () {
+    return this.isDynamic() ? this.value : '';
+};
+
+/**
+ * This method should be called to encode param
+ *
+ * @method encode
+ * @returns {String}
+ */
+SolidityParam.prototype.encode = function () {
+    return this.staticPart() + this.dynamicPart();
+};
+
+/**
+ * This method should be called to encode array of params
+ *
+ * @method encodeList
+ * @param {Array[SolidityParam]} params
+ * @returns {String}
+ */
+SolidityParam.encodeList = function (params) {
+    
+    // updating offsets
+    var totalOffset = params.length * 32;
+    var offsetParams = params.map(function (param) {
+        if (!param.isDynamic()) {
+            return param;
+        }
+        var offset = totalOffset;
+        totalOffset += param.dynamicPartLength();
+        return param.withOffset(offset);
+    });
+
+    // encode everything!
+    return offsetParams.reduce(function (result, param) {
+        return result + param.dynamicPart();
+    }, offsetParams.reduce(function (result, param) {
+        return result + param.staticPart();
+    }, ''));
+};
+
+
+
+module.exports = SolidityParam;
+
+
+
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+    This file is part of web3.js.
+
+    web3.js is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    web3.js is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/** 
+ * @file event.js
+ * @author Marek Kotewicz <marek@ethdev.com>
+ * @date 2014
+ */
+
+var utils = __webpack_require__(2);
+var coder = __webpack_require__(15);
+var formatters = __webpack_require__(6);
+var sha3 = __webpack_require__(12);
+var Filter = __webpack_require__(17);
+var watches = __webpack_require__(19);
+
+/**
+ * This prototype should be used to create event filters
+ */
+var SolidityEvent = function (requestManager, json, address) {
+    this._requestManager = requestManager;
+    this._params = json.inputs;
+    this._name = utils.transformToFullName(json);
+    this._address = address;
+    this._anonymous = json.anonymous;
+};
+
+/**
+ * Should be used to get filtered param types
+ *
+ * @method types
+ * @param {Bool} decide if returned typed should be indexed
+ * @return {Array} array of types
+ */
+SolidityEvent.prototype.types = function (indexed) {
+    return this._params.filter(function (i) {
+        return i.indexed === indexed;
+    }).map(function (i) {
+        return i.type;
+    });
+};
+
+/**
+ * Should be used to get event display name
+ *
+ * @method displayName
+ * @return {String} event display name
+ */
+SolidityEvent.prototype.displayName = function () {
+    return utils.extractDisplayName(this._name);
+};
+
+/**
+ * Should be used to get event type name
+ *
+ * @method typeName
+ * @return {String} event type name
+ */
+SolidityEvent.prototype.typeName = function () {
+    return utils.extractTypeName(this._name);
+};
+
+/**
+ * Should be used to get event signature
+ *
+ * @method signature
+ * @return {String} event signature
+ */
+SolidityEvent.prototype.signature = function () {
+    return sha3(this._name);
+};
+
+/**
+ * Should be used to encode indexed params and options to one final object
+ * 
+ * @method encode
+ * @param {Object} indexed
+ * @param {Object} options
+ * @return {Object} everything combined together and encoded
+ */
+SolidityEvent.prototype.encode = function (indexed, options) {
+    indexed = indexed || {};
+    options = options || {};
+    var result = {};
+
+    ['fromBlock', 'toBlock'].filter(function (f) {
+        return options[f] !== undefined;
+    }).forEach(function (f) {
+        result[f] = formatters.inputBlockNumberFormatter(options[f]);
+    });
+
+    result.topics = [];
+
+    result.address = this._address;
+    if (!this._anonymous) {
+        result.topics.push('0x' + this.signature());
+    }
+
+    var indexedTopics = this._params.filter(function (i) {
+        return i.indexed === true;
+    }).map(function (i) {
+        var value = indexed[i.name];
+        if (value === undefined || value === null) {
+            return null;
+        }
+        
+        if (utils.isArray(value)) {
+            return value.map(function (v) {
+                return '0x' + coder.encodeParam(i.type, v);
+            });
+        }
+        return '0x' + coder.encodeParam(i.type, value);
+    });
+
+    result.topics = result.topics.concat(indexedTopics);
+
+    return result;
+};
+
+/**
+ * Should be used to decode indexed params and options
+ *
+ * @method decode
+ * @param {Object} data
+ * @return {Object} result object with decoded indexed && not indexed params
+ */
+SolidityEvent.prototype.decode = function (data) {
+ 
+    data.data = data.data || '';
+    data.topics = data.topics || [];
+
+    var argTopics = this._anonymous ? data.topics : data.topics.slice(1);
+    var indexedData = argTopics.map(function (topics) { return topics.slice(2); }).join("");
+    var indexedParams = coder.decodeParams(this.types(true), indexedData); 
+
+    var notIndexedData = data.data.slice(2);
+    var notIndexedParams = coder.decodeParams(this.types(false), notIndexedData);
+    
+    var result = formatters.outputLogFormatter(data);
+    result.event = this.displayName();
+    result.address = data.address;
+
+    result.args = this._params.reduce(function (acc, current) {
+        acc[current.name] = current.indexed ? indexedParams.shift() : notIndexedParams.shift();
+        return acc;
+    }, {});
+
+    delete result.data;
+    delete result.topics;
+
+    return result;
+};
+
+/**
+ * Should be used to create new filter object from event
+ *
+ * @method execute
+ * @param {Object} indexed
+ * @param {Object} options
+ * @return {Object} filter object
+ */
+SolidityEvent.prototype.execute = function (indexed, options, callback) {
+
+    if (utils.isFunction(arguments[arguments.length - 1])) {
+        callback = arguments[arguments.length - 1];
+        if(arguments.length === 2)
+            options = null;
+        if(arguments.length === 1) {
+            options = null;
+            indexed = {};
+        }
+    }
+    
+    var o = this.encode(indexed, options);
+    var formatter = this.decode.bind(this);
+    return new Filter(this._requestManager, o, watches.eth(), formatter, callback);
+};
+
+/**
+ * Should be used to attach event to contract object
+ *
+ * @method attachToContract
+ * @param {Contract}
+ */
+SolidityEvent.prototype.attachToContract = function (contract) {
+    var execute = this.execute.bind(this);
+    var displayName = this.displayName();
+    if (!contract[displayName]) {
+        contract[displayName] = execute;
+    }
+    contract[displayName][this.typeName()] = this.execute.bind(this, contract);
+};
+
+module.exports = SolidityEvent;
+
+
+
+/***/ }),
+/* 28 */
+/***/ (function(module, exports) {
+
+/*
+    This file is part of web3.js.
+
+    web3.js is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    web3.js is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
+*/
+/** @file jsonrpc.js
+ * @authors:
+ *   Marek Kotewicz <marek@ethdev.com>
+ *   Aaron Kumavis <aaron@kumavis.me>
+ * @date 2015
+ */
+
+// Initialize Jsonrpc as a simple object with utility functions.
+var Jsonrpc = {
+    messageId: 0
+};
+
+/**
+ * Should be called to valid json create payload object
+ *
+ * @method toPayload
+ * @param {Function} method of jsonrpc call, required
+ * @param {Array} params, an array of method params, optional
+ * @returns {Object} valid jsonrpc payload object
+ */
+Jsonrpc.toPayload = function (method, params) {
+    if (!method)
+        console.error('jsonrpc method should be specified!');
+
+    // advance message ID
+    Jsonrpc.messageId++;
+
+    return {
+        jsonrpc: '2.0',
+        id: Jsonrpc.messageId,
+        method: method,
+        params: params || []
+    };
+};
+
+/**
+ * Should be called to check if jsonrpc response is valid
+ *
+ * @method isValidResponse
+ * @param {Object}
+ * @returns {Boolean} true if response is valid, otherwise false
+ */
+Jsonrpc.isValidResponse = function (response) {
+    return Array.isArray(response) ? response.every(validateSingleMessage) : validateSingleMessage(response);
+
+    function validateSingleMessage(message){
+      return !!message &&
+        !message.error &&
+        message.jsonrpc === '2.0' &&
+        typeof message.id === 'number' &&
+        message.result !== undefined; // only undefined is not valid json object
+    }
+};
+
+/**
+ * Should be called to create batch payload object
+ *
+ * @method toBatchPayload
+ * @param {Array} messages, an array of objects with method (required) and params (optional) fields
+ * @returns {Array} batch payload
+ */
+Jsonrpc.toBatchPayload = function (messages) {
+    return messages.map(function (message) {
+        return Jsonrpc.toPayload(message.method, message.params);
+    });
+};
+
+module.exports = Jsonrpc;
+
+
 
 /***/ }),
 /* 29 */
@@ -26227,7 +26227,7 @@ return zhTw;
 
 }(this));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(24)(module), __webpack_require__(151)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(23)(module), __webpack_require__(151)))
 
 /***/ }),
 /* 151 */
@@ -26263,689 +26263,334 @@ module.exports = g;
 "use strict";
 
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var utils = __webpack_require__(23);
+var _require = __webpack_require__(25),
+    abis = _require.abis,
+    binaries = _require.binaries,
+    getInstance = _require.getInstance,
+    isZeroAddress = _require.isZeroAddress,
+    isZeroBytes8 = _require.isZeroBytes8,
+    isZeroBytes32 = _require.isZeroBytes32,
+    isZeroUint = _require.isZeroUint,
+    isZeroString = _require.isZeroString,
+    bytes32ToString = _require.bytes32ToString,
+    bnToPrice = _require.bnToPrice,
+    lifWei2Lif = _require.lifWei2Lif,
+    locationFromUint = _require.locationFromUint,
+    addGasMargin = _require.addGasMargin,
+    jsArrayFromSolidityArray = _require.jsArrayFromSolidityArray,
+    pretty = _require.pretty;
 
 /**
- * Methods that allow a manager to create / administrate hotels
- * @example
- *   const hotel = new HotelManager({
- *     indexAddress: '0x75a3...b', // Address of the WTIndex contract that lists this hotel
- *     owner: '0xab3...cd',        // Payer of lib tx fees, registered as owner the WTIndex
- *     web3: web3,                 // Instantiated web3 object with its provider set.
- *   });
+ * Takes bundled data for a hotel call and executes it through the WTIndex callHotel method.
+ * @param  {String} data    hex string: output of `instance.method.xyz().encodeABI()`
+ * @param  {Number} index   position of hotel in the WTIndex registry
+ * @param  {Object} context Hotel class context
+ * @return {Promievent}
  */
 
-var HotelManager = function () {
 
-  /**
-   * Instantiates a HotelManager with a web3 object, an owner account address, and the address of
-   * the Index contract that has registered hotel assets.
-   * @param  {Object} options (see example above)
-   * @return {HotelManager}
-   */
-  function HotelManager(options) {
-    _classCallCheck(this, HotelManager);
+async function execute(data, index, context) {
+  var callData = await context.WTIndex.methods.callHotel(index, data).encodeABI();
 
-    this.hotels = options.hotels || {};
-    this.hotelsAddrs = [];
-    this.owner = options.owner || null;
-    this.web3 = options.web3 || {};
-    this.context = options;
+  var options = {
+    from: context.owner,
+    to: context.WTIndex.options.address,
+    data: callData
+  };
 
-    this.WTIndex = utils.getInstance('WTIndex', options.indexAddress, this.context);
+  var estimate = await context.web3.eth.estimateGas(options);
+  options.gas = await addGasMargin(estimate, context);
 
-    this.context.WTIndex = this.WTIndex;
-    this.context.gasMargin = options.gasMargin || 1;
-  }
+  return context.web3.eth.sendTransaction(options);
+}
 
-  /**
-   * Gets non-bookings data for a Hotel contract (e.g info about its location, unit types
-   * and units).
-   * @param  {Address} hotelAddress address of Hotel contract
-   * @return {Object}
-   * @example
-   *  (we should have a doc link to JSON output here)
-   */
+/**
+ * Deploys an Index contract that functions as a registry and transaction entry
+ * point for the contract system's Hotels.
+ * system's Hotels
+ * @param  {Object}  context  ex: context.web3 / context.owner
+ * @return {Instance}         WTIndex instance
+ */
+async function deployIndex(context) {
+  var abi = abis['WTIndex'];
+  var instance = new context.web3.eth.Contract(abi);
 
+  var deployOptions = {
+    data: binaries['WTIndex'],
+    arguments: []
+  };
 
-  _createClass(HotelManager, [{
-    key: 'getHotel',
-    value: async function getHotel(hotelAddress) {
-      var hotel = utils.getInstance('Hotel', hotelAddress, this.context);
-      this.hotels[hotelAddress] = await utils.getHotelInfo(hotel, this.context);
-      return this.hotels[hotelAddress];
-    }
+  var tx = await deployContract(instance, deployOptions, context);
+  return getInstance('WTIndex', tx.contractAddress, context);
+}
 
-    /**
-     * Gets non-bookings data for all the hotels managed by the HotelManager (e.g info about their
-     * location, unit types and units).
-     * @return {Object}
-     * @example
-     * (we should have a doc link to JSON output here)
-     */
+/**
+ * Deploys a Unit contract which will subsequently be added to a Hotel's list of units
+ * @param  {String}  unitType     name of this unit's UnitType, ex: `BASIC_ROOM`
+ * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
+ * @param  {Object}  context      ex: context.web3 / context.owner
+ * @return {Promievent}           web3 deployment result
+ */
+async function deployUnit(unitType, hotelAddress, context) {
+  var typeHex = context.web3.utils.toHex(unitType);
+  var abi = abis['HotelUnit'];
+  var instance = new context.web3.eth.Contract(abi);
 
-  }, {
-    key: 'getHotels',
-    value: async function getHotels() {
-      this.hotelsAddrs = await this.WTIndex.methods.getHotelsByManager(this.owner).call();
+  var deployOptions = {
+    data: binaries['HotelUnit'],
+    arguments: [hotelAddress, typeHex]
+  };
 
-      this.hotelsAddrs = this.hotelsAddrs.filter(function (addr) {
-        return !utils.isZeroAddress(addr);
-      });
+  var tx = await deployContract(instance, deployOptions, context);
+  return getInstance('HotelUnitType', tx.contractAddress, context);
+}
 
-      if (!this.hotelsAddrs.length) return null;
+/**
+ * Deploys a UnitType contract which will subsequently be added to a Hotel's list of unit types
+ * @param  {String}  unitType     name of UnitType, ex: `BASIC_ROOM`
+ * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
+ * @param  {Object}  context      ex: context.web3 / context.owner
+ * @return {Instance}             UnitType contract instance
+ */
+async function deployUnitType(unitType, hotelAddress, context) {
+  var typeHex = context.web3.utils.toHex(unitType);
+  var abi = abis['HotelUnitType'];
+  var instance = await new context.web3.eth.Contract(abi);
 
-      this.hotels = {};
+  var deployOptions = {
+    data: binaries['HotelUnitType'],
+    arguments: [hotelAddress, typeHex]
+  };
 
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
+  var tx = await deployContract(instance, deployOptions, context);
+  return getInstance('HotelUnitType', tx.contractAddress, context);
+}
 
+/**
+ * Deploys an arbitary contract
+ * @param  {Instance} instance      web3 1.0 contract instance
+ * @param  {Object}   deployOptions options passed the web3 deployment method
+ * @param  {Object}   context       Hotel class context
+ * @return {Promievent}
+ */
+async function deployContract(instance, deployOptions, context) {
+  var data = await instance.deploy(deployOptions).encodeABI();
+
+  var options = {
+    from: context.owner,
+    data: data
+  };
+
+  var estimate = await context.web3.eth.estimateGas(options);
+  options.gas = await addGasMargin(estimate, context);
+
+  return context.web3.eth.sendTransaction(options);
+}
+
+/**
+ * Async method that gets the index of a unit type the user intends to remove
+ * @param  {Instance} hotel    Hotel
+ * @param  {String}   unitType ex: 'BASIC_ROOM'
+ * @param  {Object}   context  ex: context.web3
+ * @return {Number}
+ */
+async function getUnitTypeIndex(hotel, unitType, context) {
+  var typeHex = context.web3.utils.toHex(unitType);
+  var typeBytes32 = context.web3.utils.padRight(typeHex, 64);
+  var typeNames = await hotel.methods.getUnitTypeNames().call();
+  return typeNames.indexOf(typeBytes32);
+}
+
+/**
+ * Async method that gets a hotel instance and its index number in the WTIndex parent contract
+ * @param  {Address}  address  contract address of Hotel instance
+ * @param  {Object}   context  {WTIndex: <Instance>, owner: <address>, web3: <web3>}
+ * @return {Promise}  { hotel: <instance>, index: <number> }
+ */
+async function getHotelAndIndex(address, context) {
+  var methods = context.WTIndex.methods;
+  var owner = context.owner;
+
+  var addresses = await methods.getHotelsByManager(owner).call();
+  var index = await addresses.indexOf(address);
+  var hotel = getInstance('Hotel', address, context);
+  return {
+    hotel: hotel,
+    index: index
+  };
+}
+
+/**
+ * Async method which gets all info associated with hotel, its unit types and units. Zero
+ * elements in the solidity arrays are filtered out and data types are converted from
+ * their solidity form to JS, i.e. bytes32 --> utf8.
+ * @param  {Instance} wtHotel   Hotel contract instance
+ * @param  {Object}   context   `{WTIndex: <Instance>, owner: <address>, web3: <web3>}`
+ * @return {Object}   data
+ */
+async function getHotelInfo(wtHotel, context) {
+
+  // UnitTypes & Amenities
+  var unitTypes = {};
+  var unitTypeNames = await wtHotel.methods.getUnitTypeNames().call();
+  unitTypeNames = unitTypeNames.filter(function (name) {
+    return !isZeroBytes32(name);
+  });
+
+  if (unitTypeNames.length) {
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+
+    try {
+      for (var _iterator = unitTypeNames[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var typeName = _step.value;
+
+        var unitType = await wtHotel.methods.getUnitType(typeName).call();
+        var instance = getInstance('HotelUnitType', unitType, context);
+
+        var _name = context.web3.utils.toUtf8(typeName);
+        unitTypes[_name] = {};
+        unitTypes[_name].address = instance.address;
+
+        // UnitType Amenities
+        var amenities = await instance.methods.getAmenities().call();
+        unitTypes[_name].amenities = amenities.filter(function (item) {
+          return !isZeroUint(item);
+        }).map(function (item) {
+          return parseInt(item);
+        });
+
+        var info = await instance.methods.getInfo().call();
+
+        unitTypes[_name].info = {
+          description: isZeroString(info[0]) ? null : info[0],
+          minGuests: isZeroUint(info[1]) ? null : parseInt(info[1]),
+          maxGuests: isZeroUint(info[2]) ? null : parseInt(info[2]),
+          price: isZeroString(info[3]) ? null : info[3]
+
+          // UnitType Images
+        };var length = await instance.methods.getImagesLength().call();
+        var _images = await jsArrayFromSolidityArray(instance.methods.images, parseInt(length), isZeroString);
+        unitTypes[_name].images = _images.filter(function (item) {
+          return !isZeroString(item);
+        });
+      }
+    } catch (err) {
+      _didIteratorError = true;
+      _iteratorError = err;
+    } finally {
       try {
-        for (var _iterator = this.hotelsAddrs[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var address = _step.value;
-
-          await this.getHotel(address);
+        if (!_iteratorNormalCompletion && _iterator.return) {
+          _iterator.return();
         }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
       } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
+        if (_didIteratorError) {
+          throw _iteratorError;
         }
       }
-
-      return this.hotels;
     }
 
-    /**
-     * Gets a unit's reservation data for a specific UTC day or date.
-     * @param  {Address}        unitAddress contract address of Unit
-     * @param  {Date | Number}  day         Date | UTC day since 1970
-     * @return {Promievent}
-     * @example
-     *   const {
-     *     specialPrice,    // Price: 200.00
-     *     specialLifPrice, // LifPrice (ether): 20
-     *     bookedBy         // Address: e.g. '0x39a...2b'
-     *   } = await lib.getReservation('0xab3..cd', new Date('5/31/2020'));
-     */
+    ;
+  }
 
-  }, {
-    key: 'getReservation',
-    value: async function getReservation(unitAddress, day) {
-      if (day instanceof Date) day = utils.formatDate(day);
+  // Hotel Images
+  var imagesLength = await wtHotel.methods.getImagesLength();
+  var images = await jsArrayFromSolidityArray(wtHotel.methods.images, parseInt(imagesLength), isZeroString);
 
-      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
-      var result = await unit.methods.getReservation(day).call();
+  // Hotel Units
+  var units = {};
+  var unitsLength = await wtHotel.methods.getUnitsLength().call();
+  var unitAddresses = await jsArrayFromSolidityArray(wtHotel.methods.units, parseInt(unitsLength), isZeroAddress);
 
-      var specialPrice = utils.bnToPrice(result[0]);
-      var specialLifPrice = utils.lifWei2Lif(result[1], this.context);
-      var bookedBy = result[2];
+  if (unitAddresses.length) {
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
 
-      return {
-        specialPrice: specialPrice,
-        specialLifPrice: specialLifPrice,
-        bookedBy: bookedBy
-      };
+    try {
+      for (var _iterator2 = unitAddresses[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var address = _step2.value;
+
+        var _instance = getInstance('HotelUnit', address, context);
+        units[address] = {};
+        units[address].active = await _instance.methods.active().call();
+
+        var _unitType = await _instance.methods.unitType().call();
+        units[address].unitType = bytes32ToString(_unitType);
+
+        var code = await _instance.methods.currencyCode().call();
+        units[address].currencyCode = isZeroBytes8(code) ? null : context.web3.utils.hexToNumber(code);
+
+        var defaultPrice = await _instance.methods.defaultPrice().call();
+        units[address].defaultPrice = isZeroUint(defaultPrice) ? null : bnToPrice(defaultPrice);
+
+        var lifWei = await _instance.methods.defaultLifPrice().call();
+        lifWei = lifWei2Lif(lifWei, context);
+        units[address].defaultLifPrice = isZeroUint(lifWei) ? null : parseInt(lifWei);
+      }
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
     }
-
-    /**
-     * Gets the hotel data previously retrieved by a `getHotel` call
-     * @return {Object}
-     * @example
-     *   (we should have a doc link to JSON output here)
-     */
-
-  }, {
-    key: 'getCachedHotel',
-    value: function getCachedHotel(hotelAddress) {
-      return this.hotels[hotelAddress];
-    }
-
-    /**
-     * Gets hotel data previously retrieved by a `getHotels` call (see above)
-     * @return {Object}
-     * @example
-     *   (we should have a doc link to JSON output here)
-     */
-
-  }, {
-    key: 'getCachedHotels',
-    value: function getCachedHotels() {
-      return this.hotels;
-    }
-
-    /**
-     * Gets the contract addresses of all hotels previously retrieved by a `getHotels` call
-     * @return {Array}
-     * @example
-     *  const [Hotel1, Hotel2] = lib.getHotelsAddrs();
-     */
-
-  }, {
-    key: 'getCachedHotelsAddrs',
-    value: function getCachedHotelsAddrs() {
-      return this.hotelsAddrs;
-    }
-
-    /**
-     * Sets the Hotel class's web3 instance.
-     * @param {Object} _web3 Web3 instance, already instantiated with a provider
-     */
-
-  }, {
-    key: 'setWeb3',
-    value: function setWeb3(_web3) {
-      this.web3 = _web3;
-      this.context.web3 = _web3;
-    }
-
-    /**
-     * Creates a Hotel contract instance and registers it with the HotelManager's WTIndex contract
-     * @param  {String} name         name
-     * @param  {String} description  description
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'createHotel',
-    value: async function createHotel(name, description) {
-      var estimate = await this.WTIndex.methods.registerHotel(name, description).estimateGas();
-
-      var data = await this.WTIndex.methods.registerHotel(name, description).encodeABI();
-
-      var options = {
-        from: this.owner,
-        to: this.WTIndex.options.address,
-        gas: await utils.addGasMargin(estimate, this.context),
-        data: data
-      };
-
-      return this.web3.eth.sendTransaction(options);
-    }
-
-    /**
-     * Removes a hotel from the WTIndex registry
-     * @param  {Address} address address of Hotel contract to de-list
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'removeHotel',
-    value: async function removeHotel(address) {
-      var _ref = await utils.getHotelAndIndex(address, this.context),
-          hotel = _ref.hotel,
-          index = _ref.index;
-
-      var data = await this.WTIndex.methods.removeHotel(index).encodeABI();
-
-      var options = {
-        from: this.owner,
-        to: this.WTIndex.options.address,
-        data: data
-      };
-
-      var estimate = await this.web3.eth.estimateGas(options);
-      options.gas = await utils.addGasMargin(estimate, this.context);
-
-      return this.web3.eth.sendTransaction(options);
-    }
-
-    /**
-     * Sets a boolean flag in a Hotel contract that determines whether bookings
-     * can happen instantly or require confirmation by a manager before they
-     * proceed.
-     * @param {Address} hotelAddress  Contract address of the hotel to edit.
-     * @param {Boolean} value         t/f: require confirmation
-     */
-
-  }, {
-    key: 'setRequireConfirmation',
-    value: async function setRequireConfirmation(hotelAddress, value) {
-      var _ref2 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref2.hotel,
-          index = _ref2.index;
-
-      var data = await hotel.methods.changeConfirmation(value).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Edits a hotel's name and description.
-     * @param  {Address} hotelAddress contract address
-     * @param  {String}  name         hotel name
-     * @param  {String}  description  hotel description
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'changeHotelInfo',
-    value: async function changeHotelInfo(hotelAddress, name, description) {
-      var _ref3 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref3.hotel,
-          index = _ref3.index;
-
-      var data = await hotel.methods.editInfo(name, description).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Edits a hotel's physical address data.
-     * @param  {Address} hotelAddress contract address
-     * @param  {String} lineOne       physical address data
-     * @param  {String} lineTwo       physical address data
-     * @param  {String} zipCode       physical address data
-     * @param  {String} country       physical address data
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'changeHotelAddress',
-    value: async function changeHotelAddress(hotelAddress, lineOne, lineTwo, zipCode, country) {
-      var _ref4 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref4.hotel,
-          index = _ref4.index;
-
-      var data = await hotel.methods.editAddress(lineOne, lineTwo, zipCode, country).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Edits a hotel's coordinate location and timezone data.
-     * @param  {Address} hotelAddress contract address
-     * @param  {Number} timezone      positive integer timezone relative to GMT
-     * @param  {Number} latitude      GPS latitude location data e.g `-3.703578`
-     * @param  {Number} longitude     GPS longitude location data e.g `40.426371`
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'changeHotelLocation',
-    value: async function changeHotelLocation(hotelAddress, timezone, latitude, longitude) {
-      var _ref5 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref5.hotel,
-          index = _ref5.index;
-
-      var _utils$locationToUint = utils.locationToUint(longitude, latitude),
-          long = _utils$locationToUint.long,
-          lat = _utils$locationToUint.lat;
-
-      var data = await hotel.methods.editLocation(timezone, long, lat).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Confirms a pending booking request. `reservationId` is the value of the `dataHash` field
-     * from the `CallStarted` event fired when a booking that requires confirmation is initiated.
-     * @param  {Address} hotelAddress  Hotel contract address that controls unit requested
-     * @param  {String}  reservationId data hash.
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'confirmBooking',
-    value: async function confirmBooking(hotelAddress, reservationId) {
-      var _ref6 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref6.hotel,
-          index = _ref6.index;
-
-      var data = await hotel.methods.continueCall(reservationId).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Deploys a UnitType contract and registers it to an existing Hotel contract
-     * @param  {Address} hotelAddress Hotel contract that will control created UnitType contract
-     * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'addUnitType',
-    value: async function addUnitType(hotelAddress, unitType) {
-      var _ref7 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref7.hotel,
-          index = _ref7.index;
-
-      var instance = await utils.deployUnitType(unitType, hotelAddress, this.context);
-
-      var data = hotel.methods.addUnitType(instance.options.address).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Unregisters a UnitType contract from an existing Hotel contract
-     * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to remove
-     * @param  {String}  unitType     unique plain text id of UnitType, ex: 'BASIC_ROOM'
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'removeUnitType',
-    value: async function removeUnitType(hotelAddress, unitType) {
-      var _ref8 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref8.hotel,
-          index = _ref8.index;
-
-      var typeIndex = await utils.getUnitTypeIndex(hotel, unitType, this.context);
-      var typeHex = this.web3.utils.toHex(unitType);
-
-      var data = hotel.methods.removeUnitType(typeHex, typeIndex).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Edits a unit type's basic info data.
-     * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
-     * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
-     * @param  {String} description   description: e.g. 'Simple. Clean.'
-     * @param  {Number} minGuests     minimum number of guests that can stay in UnitType
-     * @param  {Number} maxGuests     maximum number of guests that can stay in UnitType
-     * @param  {String} price         price of UnitType: e.g '50 euros'
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'editUnitType',
-    value: async function editUnitType(hotelAddress, unitType, description, minGuests, maxGuests, price) {
-      var _ref9 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref9.hotel,
-          index = _ref9.index;
-
-      var typeHex = this.web3.utils.toHex(unitType);
-      var address = await hotel.methods.getUnitType(typeHex).call();
-      var instance = utils.getInstance('HotelUnitType', address, this.context);
-
-      var editData = instance.methods.edit(description, minGuests, maxGuests, price).encodeABI();
-
-      var hotelData = hotel.methods.callUnitType(typeHex, editData).encodeABI();
-
-      return utils.execute(hotelData, index, this.context);
-    }
-
-    /**
-     * Adds an amenity to a unit type
-     * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
-     * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
-     * @param  {Number} amenity       integer code of amenity to add: ex: 23
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'addAmenity',
-    value: async function addAmenity(hotelAddress, unitType, amenity) {
-      var _ref10 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref10.hotel,
-          index = _ref10.index;
-
-      var typeHex = this.web3.utils.toHex(unitType);
-      var address = await hotel.methods.getUnitType(typeHex).call();
-      var instance = utils.getInstance('HotelUnitType', address, this.context);
-
-      var amenityData = instance.methods.addAmenity(amenity).encodeABI();
-
-      var hotelData = hotel.methods.callUnitType(typeHex, amenityData).encodeABI();
-
-      return utils.execute(hotelData, index, this.context);
-    }
-
-    /**
-     * Removes an amenity from a unit type.
-     * @param  {Address} hotelAddress   Hotel contract that controls the UnitType contract to edit
-     * @param  {String}  unitType       unique plain text id of UnitType, ex: 'BASIC_ROOM'
-     * @param  {Number}  amenity        integer code of amenity to remove: ex: 23
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'removeAmenity',
-    value: async function removeAmenity(hotelAddress, unitType, amenity) {
-      var _ref11 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref11.hotel,
-          index = _ref11.index;
-
-      var typeHex = this.web3.utils.toHex(unitType);
-      var address = await hotel.methods.getUnitType(typeHex).call();
-      var instance = utils.getInstance('HotelUnitType', address, this.context);
-
-      var amenityData = instance.methods.removeAmenity(amenity).encodeABI();
-
-      var hotelData = hotel.methods.callUnitType(typeHex, amenityData).encodeABI();
-
-      return utils.execute(hotelData, index, this.context);
-    }
-
-    /**
-     * Deploys a Unit contract and registers it to an existing Hotel contract
-     * @param {Address} hotelAddress  Hotel contract that will control created Unit contract
-     * @param {String}  unitType      unique plain text id of this units UnitType, ex: 'BASIC_ROOM'
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'addUnit',
-    value: async function addUnit(hotelAddress, unitType) {
-      var _ref12 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref12.hotel,
-          index = _ref12.index;
-
-      var instance = await utils.deployUnit(unitType, hotelAddress, this.context);
-
-      var data = hotel.methods.addUnit(instance.options.address).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Unregisters a Unit contract from an existing Hotel contract
-     * @param  {Address} hotelAddress   Hotel contract that controls the Unit contract to remove
-     * @param  {Address} unitAddress    Unit contract to remove
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'removeUnit',
-    value: async function removeUnit(hotelAddress, unitAddress) {
-      var _ref13 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref13.hotel,
-          index = _ref13.index;
-
-      var data = hotel.methods.removeUnit(unitAddress).encodeABI();
-
-      return utils.execute(data, index, this.context);
-    }
-
-    /**
-     * Sets a Unit contracts `active` status. This determines whether or not it can be booked.
-     * @param {Address} hotelAddress  Hotel contract that controls the Unit contract to edit
-     * @param {Address} unitAddress   Unit contract to edit
-     * @param {Boolean} active        Unit is locked when false.
-     */
-
-  }, {
-    key: 'setUnitActive',
-    value: async function setUnitActive(hotelAddress, unitAddress, active) {
-      var _ref14 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref14.hotel,
-          index = _ref14.index;
-
-      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
-
-      var unitData = unit.methods.setActive(active).encodeABI();
-
-      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
-
-      return utils.execute(hotelData, index, this.context);
-    }
-
-    /**
-     * Sets the default price for a unit
-     * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited
-     * @param {Address}   unitAddress   Unit contract to edit
-     * @param {Number}    price         Integer or floating point price
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'setDefaultPrice',
-    value: async function setDefaultPrice(hotelAddress, unitAddress, price) {
-      var _ref15 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref15.hotel,
-          index = _ref15.index;
-
-      var uintPrice = utils.priceToUint(price);
-      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
-
-      var unitData = unit.methods.setDefaultPrice(uintPrice).encodeABI();
-
-      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
-
-      await utils.execute(hotelData, index, this.context);
-    }
-
-    /**
-     * Sets the default LifPrice for this unit
-     * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
-     * @param  {Address}          unitAddress  Unit contract to edit
-     * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
-     * @return {Promievent}
-    */
-
-  }, {
-    key: 'setDefaultLifPrice',
-    value: async function setDefaultLifPrice(hotelAddress, unitAddress, price) {
-      var _ref16 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref16.hotel,
-          index = _ref16.index;
-
-      var weiPrice = utils.lif2LifWei(price, this.context);
-      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
-
-      var unitData = unit.methods.setDefaultLifPrice(weiPrice).encodeABI();
-
-      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
-
-      await utils.execute(hotelData, index, this.context);
-    }
-
-    /**
-     * Changes the default currency code
-     * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited
-     * @param {Address}   unitAddress   Unit contract to edit
-     * @param {Number}    code          Integer currency code btw 0 and 255
-     * @param {Function}  converter     ex `euro = kroneToEuro(krone)`
-     * @param {Date}      convertStart  date to begin search of specialPrices
-     * @param {Date}      convertEnd    date (inclusive) to end search of specialPrices
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'setCurrencyCode',
-    value: async function setCurrencyCode(hotelAddress, unitAddress, code, converter, convertStart, convertEnd) {
-      var _ref17 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref17.hotel,
-          index = _ref17.index;
-
-      code = utils.currencyCodeToHex(code, this.context);
-      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
-
-      var unitData = unit.methods.setCurrencyCode(code).encodeABI();
-
-      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
-
-      await utils.execute(hotelData, index, this.context);
-
-      // -------------------------------- NB ----------------------------------------
-      // We probably need to iterate through a range of dates and
-      // convert special prices from old to new denomination. We probably also need
-      // to estimate how many we can do at once.
-    }
-
-    /**
-     * Sets a unit's national currency booking price for range of days. Check-in is on
-     * the first day, check-out on the last.
-     * @param  {Address} hotelAddress Hotel contract that controls the Unit contract to edit
-     * @param  {Addres}  unitAddress  Unit contract to edit
-     * @param  {Number}  price        integer or floating point price
-     * @param  {Date}    fromDate     check-in date
-     * @param  {Number}  amountDays   integer number of days to book.
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'setUnitSpecialPrice',
-    value: async function setUnitSpecialPrice(hotelAddress, unitAddress, price, fromDate, amountDays) {
-      var _ref18 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref18.hotel,
-          index = _ref18.index;
-
-      var fromDay = utils.formatDate(fromDate);
-      var uintPrice = utils.priceToUint(price);
-
-      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
-
-      var unitData = unit.methods.setSpecialPrice(uintPrice, fromDay, amountDays).encodeABI();
-
-      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
-
-      return utils.execute(hotelData, index, this.context);
-    }
-
-    /**
-     * Sets a unit's booking price for range of days. Check-in is on the first day,
-     * check-out on the last.
-     * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
-     * @param  {Address}          unitAddress  Unit contract to edit
-     * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
-     * @param  {Date}             fromDate     check-in date
-     * @param  {Number}           amountDays   integer number of days to book.
-     * @return {Promievent}
-     */
-
-  }, {
-    key: 'setUnitSpecialLifPrice',
-    value: async function setUnitSpecialLifPrice(hotelAddress, unitAddress, price, fromDate, amountDays) {
-      var _ref19 = await utils.getHotelAndIndex(hotelAddress, this.context),
-          hotel = _ref19.hotel,
-          index = _ref19.index;
-
-      var lifPrice = utils.lif2LifWei(price, this.context);
-      var fromDay = utils.formatDate(fromDate);
-      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
-
-      var unitData = unit.methods.setSpecialLifPrice(lifPrice, fromDay, amountDays).encodeABI();
-
-      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
-
-      return utils.execute(hotelData, index, this.context);
-    }
-  }]);
-
-  return HotelManager;
-}();
-
-;
-
-module.exports = HotelManager;
+  }
+
+  // Hotel Info
+  var name = await wtHotel.methods.name().call();
+  var description = await wtHotel.methods.description().call();
+  var manager = await wtHotel.methods.manager().call();
+  var lineOne = await wtHotel.methods.lineOne().call();
+  var lineTwo = await wtHotel.methods.lineTwo().call();
+  var zip = await wtHotel.methods.zip().call();
+  var country = await wtHotel.methods.country().call();
+  var created = await wtHotel.methods.created().call();
+  var timezone = await wtHotel.methods.timezone().call();
+  var latitude = await wtHotel.methods.latitude().call();
+  var longitude = await wtHotel.methods.longitude().call();
+  var waitConfirmation = await wtHotel.methods.waitConfirmation().call();
+
+  return {
+    name: isZeroString(name) ? null : name,
+    description: isZeroString(description) ? null : description,
+    manager: isZeroAddress(manager) ? null : manager,
+    lineOne: isZeroString(lineOne) ? null : lineOne,
+    lineTwo: isZeroString(lineTwo) ? null : lineTwo,
+    zip: isZeroString(zip) ? null : zip,
+    country: isZeroString(country) ? null : country,
+    created: isZeroUint(created) ? null : parseInt(created),
+    timezone: isZeroUint(timezone) ? null : parseInt(timezone),
+    latitude: isZeroUint(latitude) ? null : locationFromUint(longitude, latitude).lat,
+    longitude: isZeroUint(longitude) ? null : locationFromUint(longitude, latitude).long,
+    waitConfirmation: waitConfirmation,
+    images: images,
+    unitTypeNames: unitTypeNames.map(function (name) {
+      return bytes32ToString(name);
+    }),
+    unitTypes: unitTypes,
+    units: units,
+    unitAddresses: unitAddresses
+  };
+}
+
+module.exports = {
+  execute: execute,
+  deployIndex: deployIndex,
+  deployUnitType: deployUnitType,
+  deployUnit: deployUnit,
+  getHotelAndIndex: getHotelAndIndex,
+  getHotelInfo: getHotelInfo,
+  getUnitTypeIndex: getUnitTypeIndex
+};
 
 /***/ }),
 /* 153 */
@@ -27692,7 +27337,7 @@ module.exports = Web3;
  */
 
 var sha3 = __webpack_require__(12);
-var SolidityEvent = __webpack_require__(26);
+var SolidityEvent = __webpack_require__(27);
 var formatters = __webpack_require__(6);
 var utils = __webpack_require__(2);
 var Filter = __webpack_require__(17);
@@ -27785,7 +27430,7 @@ module.exports = AllSolidityEvents;
  * @date 2015
  */
 
-var Jsonrpc = __webpack_require__(27);
+var Jsonrpc = __webpack_require__(28);
 var errors = __webpack_require__(13);
 
 var Batch = function (web3) {
@@ -27859,7 +27504,7 @@ module.exports = Batch;
 
 var utils = __webpack_require__(2);
 var coder = __webpack_require__(15);
-var SolidityEvent = __webpack_require__(26);
+var SolidityEvent = __webpack_require__(27);
 var SolidityFunction = __webpack_require__(180);
 var AllEvents = __webpack_require__(176);
 
@@ -28510,7 +28155,7 @@ if (typeof window !== 'undefined' && window.XMLHttpRequest) {
     XMLHttpRequest = __webpack_require__(173).XMLHttpRequest; // jshint ignore: line
 }
 
-var XHR2 = __webpack_require__(219); // jshint ignore: line
+var XHR2 = __webpack_require__(218); // jshint ignore: line
 
 /**
  * HttpProvider should be used to send rpc calls over http
@@ -29752,7 +29397,7 @@ module.exports = {
  * @date 2014
  */
 
-var Jsonrpc = __webpack_require__(27);
+var Jsonrpc = __webpack_require__(28);
 var utils = __webpack_require__(2);
 var c = __webpack_require__(16);
 var errors = __webpack_require__(13);
@@ -30209,342 +29854,6 @@ module.exports = transfer;
 /* 194 */
 /***/ (function(module, exports, __webpack_require__) {
 
-"use strict";
-
-
-var _require = __webpack_require__(28),
-    abis = _require.abis,
-    binaries = _require.binaries,
-    getInstance = _require.getInstance,
-    isZeroAddress = _require.isZeroAddress,
-    isZeroBytes8 = _require.isZeroBytes8,
-    isZeroBytes32 = _require.isZeroBytes32,
-    isZeroUint = _require.isZeroUint,
-    isZeroString = _require.isZeroString,
-    bytes32ToString = _require.bytes32ToString,
-    bnToPrice = _require.bnToPrice,
-    lifWei2Lif = _require.lifWei2Lif,
-    locationFromUint = _require.locationFromUint,
-    addGasMargin = _require.addGasMargin,
-    jsArrayFromSolidityArray = _require.jsArrayFromSolidityArray,
-    pretty = _require.pretty;
-
-/**
- * Takes bundled data for a hotel call and executes it through the WTIndex callHotel method.
- * @param  {String} data    hex string: output of `instance.method.xyz().encodeABI()`
- * @param  {Number} index   position of hotel in the WTIndex registry
- * @param  {Object} context Hotel class context
- * @return {Promievent}
- */
-
-
-async function execute(data, index, context) {
-  var callData = await context.WTIndex.methods.callHotel(index, data).encodeABI();
-
-  var options = {
-    from: context.owner,
-    to: context.WTIndex.options.address,
-    data: callData
-  };
-
-  var estimate = await context.web3.eth.estimateGas(options);
-  options.gas = await addGasMargin(estimate, context);
-
-  return context.web3.eth.sendTransaction(options);
-}
-
-/**
- * Deploys an Index contract that functions as a registry and transaction entry
- * point for the contract system's Hotels.
- * system's Hotels
- * @param  {Object}  context  ex: context.web3 / context.owner
- * @return {Instance}         WTIndex instance
- */
-async function deployIndex(context) {
-  var abi = abis['WTIndex'];
-  var instance = new context.web3.eth.Contract(abi);
-
-  var deployOptions = {
-    data: binaries['WTIndex'],
-    arguments: []
-  };
-
-  var tx = await deployContract(instance, deployOptions, context);
-  return getInstance('WTIndex', tx.contractAddress, context);
-}
-
-/**
- * Deploys a Unit contract which will subsequently be added to a Hotel's list of units
- * @param  {String}  unitType     name of this unit's UnitType, ex: `BASIC_ROOM`
- * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
- * @param  {Object}  context      ex: context.web3 / context.owner
- * @return {Promievent}           web3 deployment result
- */
-async function deployUnit(unitType, hotelAddress, context) {
-  var typeHex = context.web3.utils.toHex(unitType);
-  var abi = abis['HotelUnit'];
-  var instance = new context.web3.eth.Contract(abi);
-
-  var deployOptions = {
-    data: binaries['HotelUnit'],
-    arguments: [hotelAddress, typeHex]
-  };
-
-  var tx = await deployContract(instance, deployOptions, context);
-  return getInstance('HotelUnitType', tx.contractAddress, context);
-}
-
-/**
- * Deploys a UnitType contract which will subsequently be added to a Hotel's list of unit types
- * @param  {String}  unitType     name of UnitType, ex: `BASIC_ROOM`
- * @param  {Address} hotelAddress address of the Hotel instance that will own this contract
- * @param  {Object}  context      ex: context.web3 / context.owner
- * @return {Instance}             UnitType contract instance
- */
-async function deployUnitType(unitType, hotelAddress, context) {
-  var typeHex = context.web3.utils.toHex(unitType);
-  var abi = abis['HotelUnitType'];
-  var instance = await new context.web3.eth.Contract(abi);
-
-  var deployOptions = {
-    data: binaries['HotelUnitType'],
-    arguments: [hotelAddress, typeHex]
-  };
-
-  var tx = await deployContract(instance, deployOptions, context);
-  return getInstance('HotelUnitType', tx.contractAddress, context);
-}
-
-/**
- * Deploys an arbitary contract
- * @param  {Instance} instance      web3 1.0 contract instance
- * @param  {Object}   deployOptions options passed the web3 deployment method
- * @param  {Object}   context       Hotel class context
- * @return {Promievent}
- */
-async function deployContract(instance, deployOptions, context) {
-  var data = await instance.deploy(deployOptions).encodeABI();
-
-  var options = {
-    from: context.owner,
-    data: data
-  };
-
-  var estimate = await context.web3.eth.estimateGas(options);
-  options.gas = await addGasMargin(estimate, context);
-
-  return context.web3.eth.sendTransaction(options);
-}
-
-/**
- * Async method that gets the index of a unit type the user intends to remove
- * @param  {Instance} hotel    Hotel
- * @param  {String}   unitType ex: 'BASIC_ROOM'
- * @param  {Object}   context  ex: context.web3
- * @return {Number}
- */
-async function getUnitTypeIndex(hotel, unitType, context) {
-  var typeHex = context.web3.utils.toHex(unitType);
-  var typeBytes32 = context.web3.utils.padRight(typeHex, 64);
-  var typeNames = await hotel.methods.getUnitTypeNames().call();
-  return typeNames.indexOf(typeBytes32);
-}
-
-/**
- * Async method that gets a hotel instance and its index number in the WTIndex parent contract
- * @param  {Address}  address  contract address of Hotel instance
- * @param  {Object}   context  {WTIndex: <Instance>, owner: <address>, web3: <web3>}
- * @return {Promise}  { hotel: <instance>, index: <number> }
- */
-async function getHotelAndIndex(address, context) {
-  var methods = context.WTIndex.methods;
-  var owner = context.owner;
-
-  var addresses = await methods.getHotelsByManager(owner).call();
-  var index = await addresses.indexOf(address);
-  var hotel = getInstance('Hotel', address, context);
-  return {
-    hotel: hotel,
-    index: index
-  };
-}
-
-/**
- * Async method which gets all info associated with hotel, its unit types and units. Zero
- * elements in the solidity arrays are filtered out and data types are converted from
- * their solidity form to JS, i.e. bytes32 --> utf8.
- * @param  {Instance} wtHotel   Hotel contract instance
- * @param  {Object}   context   `{WTIndex: <Instance>, owner: <address>, web3: <web3>}`
- * @return {Object}   data
- */
-async function getHotelInfo(wtHotel, context) {
-
-  // UnitTypes & Amenities
-  var unitTypes = {};
-  var unitTypeNames = await wtHotel.methods.getUnitTypeNames().call();
-  unitTypeNames = unitTypeNames.filter(function (name) {
-    return !isZeroBytes32(name);
-  });
-
-  if (unitTypeNames.length) {
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = unitTypeNames[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var typeName = _step.value;
-
-        var unitType = await wtHotel.methods.getUnitType(typeName).call();
-        var instance = getInstance('HotelUnitType', unitType, context);
-
-        var _name = context.web3.utils.toUtf8(typeName);
-        unitTypes[_name] = {};
-        unitTypes[_name].address = instance.address;
-
-        // UnitType Amenities
-        var amenities = await instance.methods.getAmenities().call();
-        unitTypes[_name].amenities = amenities.filter(function (item) {
-          return !isZeroUint(item);
-        }).map(function (item) {
-          return parseInt(item);
-        });
-
-        var info = await instance.methods.getInfo().call();
-
-        unitTypes[_name].info = {
-          description: isZeroString(info[0]) ? null : info[0],
-          minGuests: isZeroUint(info[1]) ? null : parseInt(info[1]),
-          maxGuests: isZeroUint(info[2]) ? null : parseInt(info[2]),
-          price: isZeroString(info[3]) ? null : info[3]
-
-          // UnitType Images
-        };var length = await instance.methods.getImagesLength().call();
-        var _images = await jsArrayFromSolidityArray(instance.methods.images, parseInt(length), isZeroString);
-        unitTypes[_name].images = _images.filter(function (item) {
-          return !isZeroString(item);
-        });
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
-    }
-
-    ;
-  }
-
-  // Hotel Images
-  var imagesLength = await wtHotel.methods.getImagesLength();
-  var images = await jsArrayFromSolidityArray(wtHotel.methods.images, parseInt(imagesLength), isZeroString);
-
-  // Hotel Units
-  var units = {};
-  var unitsLength = await wtHotel.methods.getUnitsLength().call();
-  var unitAddresses = await jsArrayFromSolidityArray(wtHotel.methods.units, parseInt(unitsLength), isZeroAddress);
-
-  if (unitAddresses.length) {
-    var _iteratorNormalCompletion2 = true;
-    var _didIteratorError2 = false;
-    var _iteratorError2 = undefined;
-
-    try {
-      for (var _iterator2 = unitAddresses[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-        var address = _step2.value;
-
-        var _instance = getInstance('HotelUnit', address, context);
-        units[address] = {};
-        units[address].active = await _instance.methods.active().call();
-
-        var _unitType = await _instance.methods.unitType().call();
-        units[address].unitType = bytes32ToString(_unitType);
-
-        var code = await _instance.methods.currencyCode().call();
-        units[address].currencyCode = isZeroBytes8(code) ? null : context.web3.utils.hexToNumber(code);
-
-        var defaultPrice = await _instance.methods.defaultPrice().call();
-        units[address].defaultPrice = isZeroUint(defaultPrice) ? null : bnToPrice(defaultPrice);
-
-        var lifWei = await _instance.methods.defaultLifPrice().call();
-        lifWei = lifWei2Lif(lifWei, context);
-        units[address].defaultLifPrice = isZeroUint(lifWei) ? null : parseInt(lifWei);
-      }
-    } catch (err) {
-      _didIteratorError2 = true;
-      _iteratorError2 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion2 && _iterator2.return) {
-          _iterator2.return();
-        }
-      } finally {
-        if (_didIteratorError2) {
-          throw _iteratorError2;
-        }
-      }
-    }
-  }
-
-  // Hotel Info
-  var name = await wtHotel.methods.name().call();
-  var description = await wtHotel.methods.description().call();
-  var manager = await wtHotel.methods.manager().call();
-  var lineOne = await wtHotel.methods.lineOne().call();
-  var lineTwo = await wtHotel.methods.lineTwo().call();
-  var zip = await wtHotel.methods.zip().call();
-  var country = await wtHotel.methods.country().call();
-  var created = await wtHotel.methods.created().call();
-  var timezone = await wtHotel.methods.timezone().call();
-  var latitude = await wtHotel.methods.latitude().call();
-  var longitude = await wtHotel.methods.longitude().call();
-  var waitConfirmation = await wtHotel.methods.waitConfirmation().call();
-
-  return {
-    name: isZeroString(name) ? null : name,
-    description: isZeroString(description) ? null : description,
-    manager: isZeroAddress(manager) ? null : manager,
-    lineOne: isZeroString(lineOne) ? null : lineOne,
-    lineTwo: isZeroString(lineTwo) ? null : lineTwo,
-    zip: isZeroString(zip) ? null : zip,
-    country: isZeroString(country) ? null : country,
-    created: isZeroUint(created) ? null : parseInt(created),
-    timezone: isZeroUint(timezone) ? null : parseInt(timezone),
-    latitude: isZeroUint(latitude) ? null : locationFromUint(longitude, latitude).lat,
-    longitude: isZeroUint(longitude) ? null : locationFromUint(longitude, latitude).long,
-    waitConfirmation: waitConfirmation,
-    images: images,
-    unitTypeNames: unitTypeNames.map(function (name) {
-      return bytes32ToString(name);
-    }),
-    unitTypes: unitTypes,
-    units: units,
-    unitAddresses: unitAddresses
-  };
-}
-
-module.exports = {
-  execute: execute,
-  deployIndex: deployIndex,
-  deployUnitType: deployUnitType,
-  deployUnit: deployUnit,
-  getHotelAndIndex: getHotelAndIndex,
-  getHotelInfo: getHotelInfo,
-  getUnitTypeIndex: getUnitTypeIndex
-};
-
-/***/ }),
-/* 195 */
-/***/ (function(module, exports, __webpack_require__) {
-
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
@@ -30779,7 +30088,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 196 */
+/* 195 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -30933,7 +30242,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 197 */
+/* 196 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31004,13 +30313,13 @@ module.exports = {
 }));
 
 /***/ }),
-/* 198 */
+/* 197 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
 	if (true) {
 		// CommonJS
-		module.exports = exports = factory(__webpack_require__(1), __webpack_require__(20), __webpack_require__(199), __webpack_require__(196), __webpack_require__(9), __webpack_require__(11), __webpack_require__(22), __webpack_require__(29), __webpack_require__(215), __webpack_require__(31), __webpack_require__(216), __webpack_require__(30), __webpack_require__(214), __webpack_require__(21), __webpack_require__(210), __webpack_require__(10), __webpack_require__(3), __webpack_require__(200), __webpack_require__(202), __webpack_require__(201), __webpack_require__(204), __webpack_require__(203), __webpack_require__(205), __webpack_require__(206), __webpack_require__(207), __webpack_require__(209), __webpack_require__(208), __webpack_require__(197), __webpack_require__(195), __webpack_require__(217), __webpack_require__(213), __webpack_require__(212), __webpack_require__(211));
+		module.exports = exports = factory(__webpack_require__(1), __webpack_require__(20), __webpack_require__(198), __webpack_require__(195), __webpack_require__(9), __webpack_require__(11), __webpack_require__(22), __webpack_require__(29), __webpack_require__(214), __webpack_require__(31), __webpack_require__(215), __webpack_require__(30), __webpack_require__(213), __webpack_require__(21), __webpack_require__(209), __webpack_require__(10), __webpack_require__(3), __webpack_require__(199), __webpack_require__(201), __webpack_require__(200), __webpack_require__(203), __webpack_require__(202), __webpack_require__(204), __webpack_require__(205), __webpack_require__(206), __webpack_require__(208), __webpack_require__(207), __webpack_require__(196), __webpack_require__(194), __webpack_require__(216), __webpack_require__(212), __webpack_require__(211), __webpack_require__(210));
 	}
 	else if (typeof define === "function" && define.amd) {
 		// AMD
@@ -31027,7 +30336,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 199 */
+/* 198 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -31108,7 +30417,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 200 */
+/* 199 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31191,7 +30500,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 201 */
+/* 200 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31312,7 +30621,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 202 */
+/* 201 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31375,7 +30684,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 203 */
+/* 202 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31420,7 +30729,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 204 */
+/* 203 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31479,7 +30788,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 205 */
+/* 204 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31533,7 +30842,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 206 */
+/* 205 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31582,7 +30891,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 207 */
+/* 206 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31627,7 +30936,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 208 */
+/* 207 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31662,7 +30971,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 209 */
+/* 208 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31712,7 +31021,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 210 */
+/* 209 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -31862,7 +31171,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 211 */
+/* 210 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -32057,7 +31366,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 212 */
+/* 211 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -32254,7 +31563,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 213 */
+/* 212 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -32398,7 +31707,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 214 */
+/* 213 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory) {
@@ -32670,7 +31979,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 215 */
+/* 214 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -32755,7 +32064,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 216 */
+/* 215 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -32843,7 +32152,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 217 */
+/* 216 */
 /***/ (function(module, exports, __webpack_require__) {
 
 ;(function (root, factory, undef) {
@@ -33618,7 +32927,7 @@ module.exports = {
 }));
 
 /***/ }),
-/* 218 */
+/* 217 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var map = {
@@ -33873,14 +33182,705 @@ webpackContext.keys = function webpackContextKeys() {
 };
 webpackContext.resolve = webpackContextResolve;
 module.exports = webpackContext;
-webpackContext.id = 218;
+webpackContext.id = 217;
 
 /***/ }),
-/* 219 */
+/* 218 */
 /***/ (function(module, exports) {
 
 module.exports = XMLHttpRequest;
 
+
+/***/ }),
+/* 219 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var utils = __webpack_require__(24);
+
+/**
+ * Methods that allow a manager to create / administrate hotels
+ * @example
+ *   const hotel = new HotelManager({
+ *     indexAddress: '0x75a3...b', // Address of the WTIndex contract that lists this hotel
+ *     owner: '0xab3...cd',        // Payer of lib tx fees, registered as owner the WTIndex
+ *     web3: web3,                 // Instantiated web3 object with its provider set.
+ *   });
+ */
+
+var HotelManager = function () {
+
+  /**
+   * Instantiates a HotelManager with a web3 object, an owner account address, and the address of
+   * the Index contract that has registered hotel assets.
+   * @param  {Object} options (see example above)
+   * @return {HotelManager}
+   */
+  function HotelManager(options) {
+    _classCallCheck(this, HotelManager);
+
+    this.hotels = options.hotels || {};
+    this.hotelsAddrs = [];
+    this.owner = options.owner || null;
+    this.web3 = options.web3 || {};
+    this.context = options;
+
+    this.WTIndex = utils.getInstance('WTIndex', options.indexAddress, this.context);
+
+    this.context.WTIndex = this.WTIndex;
+    this.context.gasMargin = options.gasMargin || 1;
+  }
+
+  /**
+   * Gets non-bookings data for a Hotel contract (e.g info about its location, unit types
+   * and units).
+   * @param  {Address} hotelAddress address of Hotel contract
+   * @return {Object}
+   * @example
+   *  (we should have a doc link to JSON output here)
+   */
+
+
+  _createClass(HotelManager, [{
+    key: 'getHotel',
+    value: async function getHotel(hotelAddress) {
+      var hotel = utils.getInstance('Hotel', hotelAddress, this.context);
+      this.hotels[hotelAddress] = await utils.getHotelInfo(hotel, this.context);
+      return this.hotels[hotelAddress];
+    }
+
+    /**
+     * Gets non-bookings data for all the hotels managed by the HotelManager (e.g info about their
+     * location, unit types and units).
+     * @return {Object}
+     * @example
+     * (we should have a doc link to JSON output here)
+     */
+
+  }, {
+    key: 'getHotels',
+    value: async function getHotels() {
+      this.hotelsAddrs = await this.WTIndex.methods.getHotelsByManager(this.owner).call();
+
+      this.hotelsAddrs = this.hotelsAddrs.filter(function (addr) {
+        return !utils.isZeroAddress(addr);
+      });
+
+      if (!this.hotelsAddrs.length) return null;
+
+      this.hotels = {};
+
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = this.hotelsAddrs[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var address = _step.value;
+
+          await this.getHotel(address);
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+
+      return this.hotels;
+    }
+
+    /**
+     * Gets a unit's reservation data for a specific UTC day or date.
+     * @param  {Address}        unitAddress contract address of Unit
+     * @param  {Date | Number}  day         Date | UTC day since 1970
+     * @return {Promievent}
+     * @example
+     *   const {
+     *     specialPrice,    // Price: 200.00
+     *     specialLifPrice, // LifPrice (ether): 20
+     *     bookedBy         // Address: e.g. '0x39a...2b'
+     *   } = await lib.getReservation('0xab3..cd', new Date('5/31/2020'));
+     */
+
+  }, {
+    key: 'getReservation',
+    value: async function getReservation(unitAddress, day) {
+      if (day instanceof Date) day = utils.formatDate(day);
+
+      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+      var result = await unit.methods.getReservation(day).call();
+
+      var specialPrice = utils.bnToPrice(result[0]);
+      var specialLifPrice = utils.lifWei2Lif(result[1], this.context);
+      var bookedBy = result[2];
+
+      return {
+        specialPrice: specialPrice,
+        specialLifPrice: specialLifPrice,
+        bookedBy: bookedBy
+      };
+    }
+
+    /**
+     * Gets the hotel data previously retrieved by a `getHotel` call
+     * @return {Object}
+     * @example
+     *   (we should have a doc link to JSON output here)
+     */
+
+  }, {
+    key: 'getCachedHotel',
+    value: function getCachedHotel(hotelAddress) {
+      return this.hotels[hotelAddress];
+    }
+
+    /**
+     * Gets hotel data previously retrieved by a `getHotels` call (see above)
+     * @return {Object}
+     * @example
+     *   (we should have a doc link to JSON output here)
+     */
+
+  }, {
+    key: 'getCachedHotels',
+    value: function getCachedHotels() {
+      return this.hotels;
+    }
+
+    /**
+     * Gets the contract addresses of all hotels previously retrieved by a `getHotels` call
+     * @return {Array}
+     * @example
+     *  const [Hotel1, Hotel2] = lib.getHotelsAddrs();
+     */
+
+  }, {
+    key: 'getCachedHotelsAddrs',
+    value: function getCachedHotelsAddrs() {
+      return this.hotelsAddrs;
+    }
+
+    /**
+     * Sets the Hotel class's web3 instance.
+     * @param {Object} _web3 Web3 instance, already instantiated with a provider
+     */
+
+  }, {
+    key: 'setWeb3',
+    value: function setWeb3(_web3) {
+      this.web3 = _web3;
+      this.context.web3 = _web3;
+    }
+
+    /**
+     * Creates a Hotel contract instance and registers it with the HotelManager's WTIndex contract
+     * @param  {String} name         name
+     * @param  {String} description  description
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'createHotel',
+    value: async function createHotel(name, description) {
+      var estimate = await this.WTIndex.methods.registerHotel(name, description).estimateGas();
+
+      var data = await this.WTIndex.methods.registerHotel(name, description).encodeABI();
+
+      var options = {
+        from: this.owner,
+        to: this.WTIndex.options.address,
+        gas: await utils.addGasMargin(estimate, this.context),
+        data: data
+      };
+
+      return this.web3.eth.sendTransaction(options);
+    }
+
+    /**
+     * Removes a hotel from the WTIndex registry
+     * @param  {Address} address address of Hotel contract to de-list
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'removeHotel',
+    value: async function removeHotel(address) {
+      var _ref = await utils.getHotelAndIndex(address, this.context),
+          hotel = _ref.hotel,
+          index = _ref.index;
+
+      var data = await this.WTIndex.methods.removeHotel(index).encodeABI();
+
+      var options = {
+        from: this.owner,
+        to: this.WTIndex.options.address,
+        data: data
+      };
+
+      var estimate = await this.web3.eth.estimateGas(options);
+      options.gas = await utils.addGasMargin(estimate, this.context);
+
+      return this.web3.eth.sendTransaction(options);
+    }
+
+    /**
+     * Sets a boolean flag in a Hotel contract that determines whether bookings
+     * can happen instantly or require confirmation by a manager before they
+     * proceed.
+     * @param {Address} hotelAddress  Contract address of the hotel to edit.
+     * @param {Boolean} value         t/f: require confirmation
+     */
+
+  }, {
+    key: 'setRequireConfirmation',
+    value: async function setRequireConfirmation(hotelAddress, value) {
+      var _ref2 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref2.hotel,
+          index = _ref2.index;
+
+      var data = await hotel.methods.changeConfirmation(value).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Edits a hotel's name and description.
+     * @param  {Address} hotelAddress contract address
+     * @param  {String}  name         hotel name
+     * @param  {String}  description  hotel description
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'changeHotelInfo',
+    value: async function changeHotelInfo(hotelAddress, name, description) {
+      var _ref3 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref3.hotel,
+          index = _ref3.index;
+
+      var data = await hotel.methods.editInfo(name, description).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Edits a hotel's physical address data.
+     * @param  {Address} hotelAddress contract address
+     * @param  {String} lineOne       physical address data
+     * @param  {String} lineTwo       physical address data
+     * @param  {String} zipCode       physical address data
+     * @param  {String} country       physical address data
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'changeHotelAddress',
+    value: async function changeHotelAddress(hotelAddress, lineOne, lineTwo, zipCode, country) {
+      var _ref4 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref4.hotel,
+          index = _ref4.index;
+
+      var data = await hotel.methods.editAddress(lineOne, lineTwo, zipCode, country).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Edits a hotel's coordinate location and timezone data.
+     * @param  {Address} hotelAddress contract address
+     * @param  {Number} timezone      positive integer timezone relative to GMT
+     * @param  {Number} latitude      GPS latitude location data e.g `-3.703578`
+     * @param  {Number} longitude     GPS longitude location data e.g `40.426371`
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'changeHotelLocation',
+    value: async function changeHotelLocation(hotelAddress, timezone, latitude, longitude) {
+      var _ref5 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref5.hotel,
+          index = _ref5.index;
+
+      var _utils$locationToUint = utils.locationToUint(longitude, latitude),
+          long = _utils$locationToUint.long,
+          lat = _utils$locationToUint.lat;
+
+      var data = await hotel.methods.editLocation(timezone, long, lat).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Confirms a pending booking request. `reservationId` is the value of the `dataHash` field
+     * from the `CallStarted` event fired when a booking that requires confirmation is initiated.
+     * @param  {Address} hotelAddress  Hotel contract address that controls unit requested
+     * @param  {String}  reservationId data hash.
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'confirmBooking',
+    value: async function confirmBooking(hotelAddress, reservationId) {
+      var _ref6 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref6.hotel,
+          index = _ref6.index;
+
+      var data = await hotel.methods.continueCall(reservationId).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Deploys a UnitType contract and registers it to an existing Hotel contract
+     * @param  {Address} hotelAddress Hotel contract that will control created UnitType contract
+     * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'addUnitType',
+    value: async function addUnitType(hotelAddress, unitType) {
+      var _ref7 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref7.hotel,
+          index = _ref7.index;
+
+      var instance = await utils.deployUnitType(unitType, hotelAddress, this.context);
+
+      var data = hotel.methods.addUnitType(instance.options.address).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Unregisters a UnitType contract from an existing Hotel contract
+     * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to remove
+     * @param  {String}  unitType     unique plain text id of UnitType, ex: 'BASIC_ROOM'
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'removeUnitType',
+    value: async function removeUnitType(hotelAddress, unitType) {
+      var _ref8 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref8.hotel,
+          index = _ref8.index;
+
+      var typeIndex = await utils.getUnitTypeIndex(hotel, unitType, this.context);
+      var typeHex = this.web3.utils.toHex(unitType);
+
+      var data = hotel.methods.removeUnitType(typeHex, typeIndex).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Edits a unit type's basic info data.
+     * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
+     * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
+     * @param  {String} description   description: e.g. 'Simple. Clean.'
+     * @param  {Number} minGuests     minimum number of guests that can stay in UnitType
+     * @param  {Number} maxGuests     maximum number of guests that can stay in UnitType
+     * @param  {String} price         price of UnitType: e.g '50 euros'
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'editUnitType',
+    value: async function editUnitType(hotelAddress, unitType, description, minGuests, maxGuests, price) {
+      var _ref9 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref9.hotel,
+          index = _ref9.index;
+
+      var typeHex = this.web3.utils.toHex(unitType);
+      var address = await hotel.methods.getUnitType(typeHex).call();
+      var instance = utils.getInstance('HotelUnitType', address, this.context);
+
+      var editData = instance.methods.edit(description, minGuests, maxGuests, price).encodeABI();
+
+      var hotelData = hotel.methods.callUnitType(typeHex, editData).encodeABI();
+
+      return utils.execute(hotelData, index, this.context);
+    }
+
+    /**
+     * Adds an amenity to a unit type
+     * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
+     * @param  {String} unitType      unique plain text id of UnitType, ex: 'BASIC_ROOM'
+     * @param  {Number} amenity       integer code of amenity to add: ex: 23
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'addAmenity',
+    value: async function addAmenity(hotelAddress, unitType, amenity) {
+      var _ref10 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref10.hotel,
+          index = _ref10.index;
+
+      var typeHex = this.web3.utils.toHex(unitType);
+      var address = await hotel.methods.getUnitType(typeHex).call();
+      var instance = utils.getInstance('HotelUnitType', address, this.context);
+
+      var amenityData = instance.methods.addAmenity(amenity).encodeABI();
+
+      var hotelData = hotel.methods.callUnitType(typeHex, amenityData).encodeABI();
+
+      return utils.execute(hotelData, index, this.context);
+    }
+
+    /**
+     * Removes an amenity from a unit type.
+     * @param  {Address} hotelAddress   Hotel contract that controls the UnitType contract to edit
+     * @param  {String}  unitType       unique plain text id of UnitType, ex: 'BASIC_ROOM'
+     * @param  {Number}  amenity        integer code of amenity to remove: ex: 23
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'removeAmenity',
+    value: async function removeAmenity(hotelAddress, unitType, amenity) {
+      var _ref11 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref11.hotel,
+          index = _ref11.index;
+
+      var typeHex = this.web3.utils.toHex(unitType);
+      var address = await hotel.methods.getUnitType(typeHex).call();
+      var instance = utils.getInstance('HotelUnitType', address, this.context);
+
+      var amenityData = instance.methods.removeAmenity(amenity).encodeABI();
+
+      var hotelData = hotel.methods.callUnitType(typeHex, amenityData).encodeABI();
+
+      return utils.execute(hotelData, index, this.context);
+    }
+
+    /**
+     * Deploys a Unit contract and registers it to an existing Hotel contract
+     * @param {Address} hotelAddress  Hotel contract that will control created Unit contract
+     * @param {String}  unitType      unique plain text id of this units UnitType, ex: 'BASIC_ROOM'
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'addUnit',
+    value: async function addUnit(hotelAddress, unitType) {
+      var _ref12 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref12.hotel,
+          index = _ref12.index;
+
+      var instance = await utils.deployUnit(unitType, hotelAddress, this.context);
+
+      var data = hotel.methods.addUnit(instance.options.address).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Unregisters a Unit contract from an existing Hotel contract
+     * @param  {Address} hotelAddress   Hotel contract that controls the Unit contract to remove
+     * @param  {Address} unitAddress    Unit contract to remove
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'removeUnit',
+    value: async function removeUnit(hotelAddress, unitAddress) {
+      var _ref13 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref13.hotel,
+          index = _ref13.index;
+
+      var data = hotel.methods.removeUnit(unitAddress).encodeABI();
+
+      return utils.execute(data, index, this.context);
+    }
+
+    /**
+     * Sets a Unit contracts `active` status. This determines whether or not it can be booked.
+     * @param {Address} hotelAddress  Hotel contract that controls the Unit contract to edit
+     * @param {Address} unitAddress   Unit contract to edit
+     * @param {Boolean} active        Unit is locked when false.
+     */
+
+  }, {
+    key: 'setUnitActive',
+    value: async function setUnitActive(hotelAddress, unitAddress, active) {
+      var _ref14 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref14.hotel,
+          index = _ref14.index;
+
+      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+
+      var unitData = unit.methods.setActive(active).encodeABI();
+
+      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
+
+      return utils.execute(hotelData, index, this.context);
+    }
+
+    /**
+     * Sets the default price for a unit
+     * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited
+     * @param {Address}   unitAddress   Unit contract to edit
+     * @param {Number}    price         Integer or floating point price
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'setDefaultPrice',
+    value: async function setDefaultPrice(hotelAddress, unitAddress, price) {
+      var _ref15 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref15.hotel,
+          index = _ref15.index;
+
+      var uintPrice = utils.priceToUint(price);
+      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+
+      var unitData = unit.methods.setDefaultPrice(uintPrice).encodeABI();
+
+      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
+
+      await utils.execute(hotelData, index, this.context);
+    }
+
+    /**
+     * Sets the default LifPrice for this unit
+     * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
+     * @param  {Address}          unitAddress  Unit contract to edit
+     * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+     * @return {Promievent}
+    */
+
+  }, {
+    key: 'setDefaultLifPrice',
+    value: async function setDefaultLifPrice(hotelAddress, unitAddress, price) {
+      var _ref16 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref16.hotel,
+          index = _ref16.index;
+
+      var weiPrice = utils.lif2LifWei(price, this.context);
+      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+
+      var unitData = unit.methods.setDefaultLifPrice(weiPrice).encodeABI();
+
+      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
+
+      await utils.execute(hotelData, index, this.context);
+    }
+
+    /**
+     * Changes the default currency code
+     * @param {Address}   hotelAddress  Hotel contract that controls the Unit being edited
+     * @param {Address}   unitAddress   Unit contract to edit
+     * @param {Number}    code          Integer currency code btw 0 and 255
+     * @param {Function}  converter     ex `euro = kroneToEuro(krone)`
+     * @param {Date}      convertStart  date to begin search of specialPrices
+     * @param {Date}      convertEnd    date (inclusive) to end search of specialPrices
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'setCurrencyCode',
+    value: async function setCurrencyCode(hotelAddress, unitAddress, code, converter, convertStart, convertEnd) {
+      var _ref17 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref17.hotel,
+          index = _ref17.index;
+
+      code = utils.currencyCodeToHex(code, this.context);
+      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+
+      var unitData = unit.methods.setCurrencyCode(code).encodeABI();
+
+      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
+
+      await utils.execute(hotelData, index, this.context);
+
+      // -------------------------------- NB ----------------------------------------
+      // We probably need to iterate through a range of dates and
+      // convert special prices from old to new denomination. We probably also need
+      // to estimate how many we can do at once.
+    }
+
+    /**
+     * Sets a unit's national currency booking price for range of days. Check-in is on
+     * the first day, check-out on the last.
+     * @param  {Address} hotelAddress Hotel contract that controls the Unit contract to edit
+     * @param  {Addres}  unitAddress  Unit contract to edit
+     * @param  {Number}  price        integer or floating point price
+     * @param  {Date}    fromDate     check-in date
+     * @param  {Number}  amountDays   integer number of days to book.
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'setUnitSpecialPrice',
+    value: async function setUnitSpecialPrice(hotelAddress, unitAddress, price, fromDate, amountDays) {
+      var _ref18 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref18.hotel,
+          index = _ref18.index;
+
+      var fromDay = utils.formatDate(fromDate);
+      var uintPrice = utils.priceToUint(price);
+
+      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+
+      var unitData = unit.methods.setSpecialPrice(uintPrice, fromDay, amountDays).encodeABI();
+
+      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
+
+      return utils.execute(hotelData, index, this.context);
+    }
+
+    /**
+     * Sets a unit's booking price for range of days. Check-in is on the first day,
+     * check-out on the last.
+     * @param  {Address}          hotelAddress Hotel contract that controls the Unit contract to edit
+     * @param  {Address}          unitAddress  Unit contract to edit
+     * @param  {String|Number|BN} price        Lif 'ether' (converted to wei by web3.utils.toWei)
+     * @param  {Date}             fromDate     check-in date
+     * @param  {Number}           amountDays   integer number of days to book.
+     * @return {Promievent}
+     */
+
+  }, {
+    key: 'setUnitSpecialLifPrice',
+    value: async function setUnitSpecialLifPrice(hotelAddress, unitAddress, price, fromDate, amountDays) {
+      var _ref19 = await utils.getHotelAndIndex(hotelAddress, this.context),
+          hotel = _ref19.hotel,
+          index = _ref19.index;
+
+      var lifPrice = utils.lif2LifWei(price, this.context);
+      var fromDay = utils.formatDate(fromDate);
+      var unit = utils.getInstance('HotelUnit', unitAddress, this.context);
+
+      var unitData = unit.methods.setSpecialLifPrice(lifPrice, fromDay, amountDays).encodeABI();
+
+      var hotelData = hotel.methods.callUnit(unit.options.address, unitData).encodeABI();
+
+      return utils.execute(hotelData, index, this.context);
+    }
+  }]);
+
+  return HotelManager;
+}();
+
+;
+
+module.exports = HotelManager;
 
 /***/ }),
 /* 220 */
@@ -50972,7 +50972,7 @@ module.exports = XMLHttpRequest;
   }
 }.call(this));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(151), __webpack_require__(24)(module)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(151), __webpack_require__(23)(module)))
 
 /***/ }),
 /* 221 */
@@ -50986,8 +50986,8 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var _ = __webpack_require__(220);
-var utils = __webpack_require__(23);
-var HotelManager = __webpack_require__(152);
+var utils = __webpack_require__(24);
+var HotelManager = __webpack_require__(219);
 
 /**
  * Methods that let managers and clients query the blockchain about hotel booking costs, history,
