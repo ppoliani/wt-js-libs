@@ -6,7 +6,7 @@ const HotelManager = require('./HotelManager');
  * Methods that let managers and clients query the blockchain about hotel booking costs, history,
  * and status.
  * @example
- *   const data = new BookingData({web3: web3})
+ *   const data = new BookingData(web3)
  */
 class BookingData {
 
@@ -209,4 +209,3 @@ class BookingData {
 }
 
 module.exports = BookingData;
-

@@ -2,8 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <base data-ice="baseUrl">
-  <title data-ice="title">Home | WindingTree Hotels Javascript Library</title>
+  <base data-ice="baseUrl" href="../../../">
+  <title data-ice="title">libs/utils/errors.js | WindingTree Hotels Javascript Library</title>
   <link type="text/css" rel="stylesheet" href="css/style.css">
   <link type="text/css" rel="stylesheet" href="css/prettify-tomorrow.css">
   <script src="script/prettify/prettify.js"></script>
@@ -38,18 +38,18 @@
 </div>
 </nav>
 
-<div class="content" data-ice="content"><div data-ice="index" class="github-markdown"><h1 id="winding-tree-javascript-libraries-for-hotels">Winding Tree Javascript Libraries for Hotels</h1><p>A JS interface to WindingTree&apos;s Ethereum smart-contracts for Hotels.</p>
-<h2 id="documentation">Documentation</h2><p>See documentation here <a href="https://windingtree.github.io/wt-js-libs/">https://windingtree.github.io/wt-js-libs/</a></p>
-<h2 id="install">Install</h2><pre><code class="lang-sh"><code class="source-code prettyprint">git clone https://github.com/windingtree/wt-js-libs --recursive
-npm install</code>
+<div class="content" data-ice="content"><h1 data-ice="title">libs/utils/errors.js</h1>
+<pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">/**
+ * Errors that a validator can consume, localized here so we can standardize their format
+ * @type {Object}
+ */
+module.exports = {
+  insufficientBalance: &apos;Token balance was too low to attempt this booking.&apos;,
+  notAvailable:        &apos;Unit is not available for the requested dates&apos;
+}
+
 </code></pre>
-<h2 id="test">Test</h2><p>To run unit tests on the contracts <code>npm test</code>, it will start a testrpc instance and run the tests in a private network.</p>
-<pre><code class="lang-sh"><code class="source-code prettyprint">npm test</code>
-</code></pre>
-<h2 id="build-docs">Build Docs</h2><pre><code class="lang-sh"><code class="source-code prettyprint">npm run docs-build // Build documentation
-npm run docs-view  // View documentation</code>
-</code></pre>
-</div>
+
 </div>
 
 <footer class="footer">
