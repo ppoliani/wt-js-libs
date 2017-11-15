@@ -189,6 +189,7 @@ describe('HotelManager', function() {
 
       assert(hotel.unitTypeNames.includes(typeName));
       assert.isDefined(hotel.unitTypes[typeName]);
+      assert.isDefined(hotel.unitTypes[typeName].address);
     });
 
     it('addUnitType: initializes info correctly', async() => {
