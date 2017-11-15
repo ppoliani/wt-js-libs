@@ -678,27 +678,27 @@ window.esdocSearchIndex = [
     "member"
   ],
   [
-    "libs/util/errors.js",
-    "file/libs/util/errors.js.html",
-    "libs/util/errors.js",
+    "libs/utils/errors.js",
+    "file/libs/utils/errors.js.html",
+    "libs/utils/errors.js",
     "file"
   ],
   [
-    "libs/util/hotel.js",
-    "file/libs/util/hotel.js.html",
-    "libs/util/hotel.js",
+    "libs/utils/hotel.js",
+    "file/libs/utils/hotel.js.html",
+    "libs/utils/hotel.js",
     "file"
   ],
   [
-    "libs/util/index.js",
-    "file/libs/util/index.js.html",
-    "libs/util/index.js",
+    "libs/utils/index.js",
+    "file/libs/utils/index.js.html",
+    "libs/utils/index.js",
     "file"
   ],
   [
-    "libs/util/misc.js",
-    "file/libs/util/misc.js.html",
-    "libs/util/misc.js",
+    "libs/utils/misc.js",
+    "file/libs/utils/misc.js.html",
+    "libs/utils/misc.js",
     "file"
   ]
 ]

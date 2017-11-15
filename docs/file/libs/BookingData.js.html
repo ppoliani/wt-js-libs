@@ -40,14 +40,14 @@
 
 <div class="content" data-ice="content"><h1 data-ice="title">libs/BookingData.js</h1>
 <pre class="source-code line-number raw-source-code"><code class="prettyprint linenums" data-ice="content">const _ = require(&apos;lodash&apos;);
-const util = require(&apos;./util/index&apos;);
+const utils = require(&apos;./utils/index&apos;);
 const HotelManager = require(&apos;./HotelManager&apos;);
 
 /**
  * Methods that let managers and clients query the blockchain about hotel booking costs, history,
  * and status.
  * @example
- *   const data = new BookingData({web3: web3})
+ *   const data = new BookingData(web3)
  */
 class BookingData {
 
@@ -73,10 +73,10 @@ class BookingData {
       const cost = await lib.getCost(&apos;0xab3..cd&apos;, new Date(&apos;5/31/2020&apos;), 5);
    */
   async getCost(unitAddress, fromDate, daysAmount){
-    const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
+    const fromDay = utils.formatDate(fromDate);
+    const unit = utils.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
     const cost = await unit.methods.getCost(fromDay, daysAmount).call();
-    return util.bnToPrice(cost);
+    return utils.bnToPrice(cost);
   }
 
   /**
@@ -90,11 +90,11 @@ class BookingData {
       const cost = await lib.getCost(&apos;0xab3..cd&apos;, new Date(&apos;5/31/2020&apos;), 5);
    */
   async getLifCost(unitAddress, fromDate, daysAmount){
-    const fromDay = util.formatDate(fromDate);
-    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
+    const fromDay = utils.formatDate(fromDate);
+    const unit = utils.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
     const wei = await unit.methods.getLifCost(fromDay, daysAmount).call();
 
-    return util.lifWei2Lif(wei, this.context);
+    return utils.lifWei2Lif(wei, this.context);
   }
 
   /**
@@ -105,8 +105,8 @@ class BookingData {
    * @return {Boolean}
    */
   async unitIsAvailable(unitAddress, fromDate, daysAmount){
-    const unit = util.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
-    const fromDay = util.formatDate(fromDate);
+    const unit = utils.getInstance(&apos;HotelUnit&apos;, unitAddress, this.context);
+    const fromDay = utils.formatDate(fromDate);
     const range = _.range(fromDay, fromDay + daysAmount);
 
     const isActive = await unit.methods.active().call();
@@ -120,7 +120,7 @@ class BookingData {
         bookedBy
       } = await this.manager.getReservation(unitAddress, day);
 
-      if (!util.isZeroAddress(bookedBy)) return false;
+      if (!utils.isZeroAddress(bookedBy)) return false;
     }
     return true;
   }
@@ -156,21 +156,26 @@ class BookingData {
 
     let events;
     for (let address of hotelsToQuery){
-      const hotel = util.getInstance(&apos;Hotel&apos;, address, this.context);
+      const hotel = utils.getInstance(&apos;Hotel&apos;, address, this.context);
 
       events = await hotel.getPastEvents(&apos;Book&apos;, {
         fromBlock: fromBlock
       });
 
-      events.forEach(event =&gt; bookings.push({
-        transactionHash: event.transactionHash,
-        blockNumber: event.blockNumber,
-        id: event.id,
-        from: event.returnValues.from,
-        unit: event.returnValues.unit,
-        fromDate: util.parseDate(event.returnValues.fromDay),
-        daysAmount: event.returnValues.daysAmount
-      }));
+      for (let event of events){
+        const guestData = await utils.getGuestData(event.transactionHash, this.context);
+
+        bookings.push({
+          guestData: guestData,
+          transactionHash: event.transactionHash,
+          blockNumber: event.blockNumber,
+          id: event.id,
+          from: event.returnValues.from,
+          unit: event.returnValues.unit,
+          fromDate: utils.parseDate(event.returnValues.fromDay),
+          daysAmount: event.returnValues.daysAmount
+        })
+      };
     }
     return bookings;
   };
@@ -208,7 +213,7 @@ class BookingData {
     let unfinished;
 
     for (let address of hotelsToQuery){
-      const hotel = util.getInstance(&apos;Hotel&apos;, address, this.context);
+      const hotel = utils.getInstance(&apos;Hotel&apos;, address, this.context);
 
       startedEvents = await hotel.getPastEvents(&apos;CallStarted&apos;, {
         fromBlock: fromBlock
@@ -226,13 +231,18 @@ class BookingData {
         return found === -1;
       })
 
-      unfinished.forEach(event =&gt; requests.push({
-        transactionHash: event.transactionHash,
-        blockNumber: event.blockNumber,
-        id: event.id,
-        from: event.returnValues.from,
-        dataHash: event.returnValues.dataHash,
-      }));
+      for(let event of unfinished){
+        const guestData = await utils.getGuestData(event.transactionHash, this.context);
+
+        requests.push({
+          guestData: guestData,
+          transactionHash: event.transactionHash,
+          blockNumber: event.blockNumber,
+          id: event.id,
+          from: event.returnValues.from,
+          dataHash: event.returnValues.dataHash,
+        })
+      };
     }
 
     return requests;
@@ -240,13 +250,12 @@ class BookingData {
 }
 
 module.exports = BookingData;
-
 </code></pre>
 
 </div>
 
 <footer class="footer">
-  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.3)</span><img src="./image/esdoc-logo-mini-black.png"></a>
+  Generated by <a href="https://esdoc.org">ESDoc<span data-ice="esdocVersion">(1.0.4)</span><img src="./image/esdoc-logo-mini-black.png"></a>
 </footer>
 
 <script src="script/search_index.js"></script>
