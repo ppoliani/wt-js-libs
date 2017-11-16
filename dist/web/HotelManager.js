@@ -26452,7 +26452,7 @@ async function getHotelInfo(wtHotel, context) {
 
         var _name = context.web3.utils.toUtf8(typeName);
         unitTypes[_name] = {};
-        unitTypes[_name].address = instance.address;
+        unitTypes[_name].address = instance._address;
 
         // UnitType Amenities
         var amenities = await instance.methods.getAmenities().call();
