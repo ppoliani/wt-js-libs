@@ -420,6 +420,18 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "libs/hotelmanager.js~hotelmanager#addimagehotel",
+    "class/libs/HotelManager.js~HotelManager.html#instance-method-addImageHotel",
+    "libs/HotelManager.js~HotelManager#addImageHotel",
+    "method"
+  ],
+  [
+    "libs/hotelmanager.js~hotelmanager#addimageunittype",
+    "class/libs/HotelManager.js~HotelManager.html#instance-method-addImageUnitType",
+    "libs/HotelManager.js~HotelManager#addImageUnitType",
+    "method"
+  ],
+  [
     "libs/hotelmanager.js~hotelmanager#addunit",
     "class/libs/HotelManager.js~HotelManager.html#instance-method-addUnit",
     "libs/HotelManager.js~HotelManager#addUnit",
@@ -543,6 +555,18 @@ window.esdocSearchIndex = [
     "libs/hotelmanager.js~hotelmanager#removehotel",
     "class/libs/HotelManager.js~HotelManager.html#instance-method-removeHotel",
     "libs/HotelManager.js~HotelManager#removeHotel",
+    "method"
+  ],
+  [
+    "libs/hotelmanager.js~hotelmanager#removeimagehotel",
+    "class/libs/HotelManager.js~HotelManager.html#instance-method-removeImageHotel",
+    "libs/HotelManager.js~HotelManager#removeImageHotel",
+    "method"
+  ],
+  [
+    "libs/hotelmanager.js~hotelmanager#removeimageunittype",
+    "class/libs/HotelManager.js~HotelManager.html#instance-method-removeImageUnitType",
+    "libs/HotelManager.js~HotelManager#removeImageUnitType",
     "method"
   ],
   [

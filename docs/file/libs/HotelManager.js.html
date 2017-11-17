@@ -318,6 +318,44 @@ class HotelManager {
   }
 
   /**
+   * Adds an image to a hotel
+   * @param  {Address} hotelAddress contract address
+   * @param  {String} url           url of the image to add
+   * @return {Promievent}
+   */
+  async addImageHotel(hotelAddress, url){
+    const {
+      hotel,
+      index
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
+
+    const data = await hotel.methods
+      .addImage(url)
+      .encodeABI();
+
+    return utils.execute(data, index, this.context);
+  }
+
+  /**
+   * Removes an image from a hotel
+   * @param  {Address} hotelAddress contract address
+   * @param  {Number}  imageIndex   index of the image to remove
+   * @return {Promievent}
+   */
+  async removeImageHotel(hotelAddress, imageIndex){
+    const {
+      hotel,
+      index
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
+
+    const data = await hotel.methods
+      .removeImage(imageIndex)
+      .encodeABI();
+
+    return utils.execute(data, index, this.context);
+  }
+
+  /**
    * Confirms a pending booking request. `reservationId` is the value of the `dataHash` field
    * from the `CallStarted` event fired when a booking that requires confirmation is initiated.
    * @param  {Address} hotelAddress  Hotel contract address that controls unit requested
@@ -462,6 +500,62 @@ class HotelManager {
 
     const hotelData = hotel.methods
       .callUnitType(typeHex, amenityData)
+      .encodeABI();
+
+    return utils.execute(hotelData, index, this.context);
+  }
+
+  /**
+   * Adds an image to a unit type
+   * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
+   * @param  {String} unitType      unique plain text id of UnitType, ex: &apos;BASIC_ROOM&apos;
+   * @param  {String} url           url of the image to add
+   * @return {Promievent}
+   */
+  async addImageUnitType(hotelAddress, unitType, url){
+    const {
+      hotel,
+      index
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
+
+    const typeHex = this.web3.utils.toHex(unitType);
+    const address = await hotel.methods.getUnitType(typeHex).call();
+    const instance = utils.getInstance(&apos;HotelUnitType&apos;, address, this.context);
+
+    const imageData = instance.methods
+      .addImage(url)
+      .encodeABI();
+
+    const hotelData = hotel.methods
+      .callUnitType(typeHex, imageData)
+      .encodeABI();
+
+    return utils.execute(hotelData, index, this.context);
+  }
+
+  /**
+   * Removes an image to a unit type
+   * @param  {Address} hotelAddress Hotel contract that controls the UnitType contract to edit
+   * @param  {String} unitType      unique plain text id of UnitType, ex: &apos;BASIC_ROOM&apos;
+   * @param  {Number} imageIndex    index of the image to remove
+   * @return {Promievent}
+   */
+  async removeImageUnitType(hotelAddress, unitType, imageIndex){
+    const {
+      hotel,
+      index
+    } = await utils.getHotelAndIndex(hotelAddress, this.context);
+
+    const typeHex = this.web3.utils.toHex(unitType);
+    const address = await hotel.methods.getUnitType(typeHex).call();
+    const instance = utils.getInstance(&apos;HotelUnitType&apos;, address, this.context);
+
+    const imageData = instance.methods
+      .removeImage(imageIndex)
+      .encodeABI();
+
+    const hotelData = hotel.methods
+      .callUnitType(typeHex, imageData)
       .encodeABI();
 
     return utils.execute(hotelData, index, this.context);

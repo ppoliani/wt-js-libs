@@ -171,6 +171,31 @@ describe('HotelManager', function() {
       assert.equal(hotel.longitude, longitude);
       assert.equal(hotel.latitude, latitude);
     });
+
+    it('addImageHotel: adds an image to the hotel', async function() {
+      const url = "image.jpeg";
+
+      await lib.addImageHotel(address, url);
+      const hotel = await lib.getHotel(address);
+
+      assert.equal(hotel.images.length, 1);
+      assert.equal(hotel.images[0], url);
+    });
+
+    it('removeImageHotel: removes an image from the hotel', async function() {
+      const url = "image.jpeg";
+
+      await lib.addImageHotel(address, url);
+      let hotel = await lib.getHotel(address);
+
+      assert.equal(hotel.images.length, 1);
+      assert.equal(hotel.images[0], url);
+
+      await lib.removeImageHotel(address, 0);
+      hotel = await lib.getHotel(address);
+
+      assert.equal(hotel.images.length, 0);
+    })
   });
 
   describe('UnitTypes', () => {
@@ -261,6 +286,32 @@ describe('HotelManager', function() {
 
       assert.isFalse(hotel.unitTypes[typeName].amenities.includes(amenity));
     });
+
+    it('addImageUnitType: adds an image to the UnitType', async function() {
+      const url = "image.jpeg";
+      await lib.addUnitType(address, typeName);
+      await lib.addImageUnitType(address, typeName, url);
+      let hotel = await lib.getHotel(address);
+
+      assert.equal(hotel.unitTypes[typeName].images.length, 1);
+      assert.equal(hotel.unitTypes[typeName].images[0], url);
+    });
+
+    it('removeImageUnitType: removes an image from the UnitType', async function() {
+      const url = "image.jpeg";
+      await lib.addUnitType(address, typeName);
+      await lib.addImageUnitType(address, typeName, url);
+      let hotel = await lib.getHotel(address);
+
+      assert.equal(hotel.unitTypes[typeName].images.length, 1);
+      assert.equal(hotel.unitTypes[typeName].images[0], url);
+
+      await lib.removeImageUnitType(address, typeName, 0);
+      hotel = await lib.getHotel(address);
+
+      assert.equal(hotel.unitTypes[typeName].images.length, 0);
+    });
+
   });
 
   describe('Units: Adding and Removing', () => {
@@ -424,4 +475,3 @@ describe('HotelManager', function() {
     });
   });
 });
-

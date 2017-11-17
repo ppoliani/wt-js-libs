@@ -209,7 +209,7 @@ async function getHotelInfo(wtHotel, context){
   }
 
   // Hotel Images
-  const imagesLength = await wtHotel.methods.getImagesLength();
+  const imagesLength = await wtHotel.methods.getImagesLength().call();
   const images = await jsArrayFromSolidityArray(
     wtHotel.methods.images,
     parseInt(imagesLength),
