@@ -45,7 +45,7 @@ const WTIndexContract = require(&apos;../../build/contracts/WTIndex.json&apos;);
 const HotelContract = require(&apos;../../build/contracts/Hotel.json&apos;);
 const UnitTypeContract = require(&apos;../../build/contracts/UnitType.json&apos;);
 const UnitContract = require(&apos;../../build/contracts/Unit.json&apos;);
-const PrivateCallContract = require(&apos;../../build/contracts/PrivateCall.json&apos;);
+const AsyncCallContract = require(&apos;../../build/contracts/AsyncCall.json&apos;);
 const LifTokenContract = require(&apos;../../build/contracts/LifToken.json&apos;);
 
 const abiDecoder = require(&apos;abi-decoder&apos;);
@@ -54,7 +54,7 @@ const print = JSON.stringify;
 
 // -------------------------- ABI Decoder / ABI Tables / Binaries ----------------------------------
 
-abiDecoder.addABI(PrivateCallContract.abi);
+abiDecoder.addABI(AsyncCallContract.abi);
 abiDecoder.addABI(LifTokenContract.abi);
 abiDecoder.addABI(HotelContract.abi);
 abiDecoder.addABI(WTIndexContract.abi);
