@@ -196,6 +196,38 @@ describe('BookingData', function() {
       assert.isArray(bookings);
       assert.equal(bookings.length, 0);
     });
+
+    it('gets a booking for a hotel that requires confirmation', async() => {
+      await Manager.setRequireConfirmation(hotelAddress, true);
+
+      await user.book(
+        hotelAddress,
+        unitAddress,
+        fromDate,
+        daysAmount,
+        guestData
+      );
+
+      let requests = await data.getBookingRequests(hotelAddress);
+      assert.equal(requests.length, 1);
+      const firstRequest = requests[0];
+      await Manager.confirmBooking(hotelAddress, firstRequest.dataHash);
+
+      const bookings = await data.getBookings(hotelAddress);
+
+      const booking = bookings[0];
+
+      assert.equal(bookings.length, 1);
+      assert.isString(booking.transactionHash);
+      assert.isNumber(booking.blockNumber);
+      assert.isString(booking.id);
+
+      assert.equal(booking.guestData, guestData);
+      assert.equal(booking.from, user.account);
+      assert.equal(booking.fromDate.toString(), fromDate.toString());
+      assert.equal(booking.unit, unitAddress);
+      assert.equal(booking.daysAmount, daysAmount);
+    });
   });
 
   describe('getBookingRequests', function(){
