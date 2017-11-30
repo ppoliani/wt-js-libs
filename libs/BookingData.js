@@ -113,16 +113,48 @@ class BookingData {
 
     if (!hotelsToQuery.length) return [];
 
-    let events;
+    let startedEvents;
+    let finishEvents;
+    let bookEvents;
+    let finished;
+    //TX hashes of CallStarted events indexed by corresponding hashes of CallFinished events
+    let startedMappedByFinished = [];
     for (let address of hotelsToQuery){
       const hotel = utils.getInstance('Hotel', address, this.context);
 
-      events = await hotel.getPastEvents('Book', {
+      bookEvents = await hotel.getPastEvents('Book', {
         fromBlock: fromBlock
       });
 
-      for (let event of events){
-        const guestData = await utils.getGuestData(event.transactionHash, this.context);
+      startedEvents = await hotel.getPastEvents('CallStarted', {
+        fromBlock: fromBlock
+      });
+
+      finishEvents = await hotel.getPastEvents('CallFinish', {
+        fromBlock: fromBlock
+      })
+
+      // Filter out started events with a corresponding Book event
+      // and map finish events -> started events
+      finished = startedEvents.filter(event => {
+        let found = finishEvents
+          .findIndex(item => item.returnValues.dataHash === event.returnValues.dataHash);
+        if(found !== -1) {
+          startedMappedByFinished[finishEvents[found].transactionHash] = event.transactionHash;
+        }
+        return found !== -1;
+      })
+
+      for (let event of bookEvents){
+        let guestData;
+
+        //If guest data can't be retreived, it means the booking required a
+        //confirmation, so the guestData can be found in the CallStarted tx
+        try {
+          guestData = await utils.getGuestData(event.transactionHash, this.context)
+        } catch(e) {
+          guestData = await utils.getGuestData(startedMappedByFinished[event.transactionHash], this.context)
+        }
 
         bookings.push({
           guestData: guestData,
