@@ -24,10 +24,10 @@ async function createWindingTreeEconomy(accounts, web3){
   const wallet = await web3.eth.accounts.wallet.create(4);
   const fundingSource = accounts[0];
 
-  await utils.fundAccount(fundingSource, wallet["0"].address, 50, web3);
-  await utils.fundAccount(fundingSource, wallet["1"].address, 50, web3);
-  await utils.fundAccount(fundingSource, wallet["2"].address, 50, web3);
-  await utils.fundAccount(fundingSource, wallet["3"].address, 50, web3);
+  await utils.fundAccount(fundingSource, wallet["0"].address, '50', web3);
+  await utils.fundAccount(fundingSource, wallet["1"].address, '50', web3);
+  await utils.fundAccount(fundingSource, wallet["2"].address, '50', web3);
+  await utils.fundAccount(fundingSource, wallet["3"].address, '50', web3);
 
   const index = await utils.deployIndex({
     owner: wallet["0"].address,
@@ -53,7 +53,7 @@ async function createWindingTreeEconomy(accounts, web3){
   const tokenFundingOptions = {
     token: token,
     sender: fundingSource,
-    value: 500,
+    value: '500',
     web3: web3
   };
 
@@ -76,4 +76,3 @@ async function createWindingTreeEconomy(accounts, web3){
 module.exports = {
   createWindingTreeEconomy: createWindingTreeEconomy
 }
-
