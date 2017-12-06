@@ -233,7 +233,7 @@ describe('BookingData', function() {
     });
   });
 
-  describe.only('getBookingRequests', function(){
+  describe('getBookingRequests', function(){
     const fromDate = new Date('10/10/2020');
     const daysAmount = 5;
     const price = 1;
