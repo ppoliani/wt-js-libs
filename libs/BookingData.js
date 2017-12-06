@@ -185,7 +185,11 @@ class BookingData {
    *     "blockNumber": 26,
    *     "id": "log_9b3eb752",
    *     "from": "0x522701D427e1C2e039fdC32Db41972A46dFD7755",
-   *     "dataHash": "0x4077e0fee8018bb3dd7...ea91b3d7ced260761c73fa"
+   *     "dataHash": "0x4077e0fee8018bb3dd7...ea91b3d7ced260761c73fa",
+   *     "hotel": '0xC9c4DdF85995dCB15377Cf8A262E0e2F19eA7011',
+   *     "unit": '0xcf0a860c363d7acd449be319a94d9abfae9dd3eb',
+   *     "fromDate": 2020-10-10T07:00:00.000Z,
+   *     "daysAmount": '5'
    *    }
    *   ]
    */
@@ -225,6 +229,13 @@ class BookingData {
       for(let event of unfinished){
         const guestData = await utils.getGuestData(event.transactionHash, this.context);
 
+        //get calldata and decode it for booking data
+        let publicCallData = await hotel.methods.getPublicCallData(event.returnValues.dataHash).call();
+        let bookData = {};
+        utils.abiDecoder.decodeMethod(publicCallData).params.forEach((param) => {
+          bookData[param.name] = param.value;
+        });
+
         requests.push({
           guestData: guestData,
           transactionHash: event.transactionHash,
@@ -232,6 +243,10 @@ class BookingData {
           id: event.id,
           from: event.returnValues.from,
           dataHash: event.returnValues.dataHash,
+          hotel: address,
+          unit: this.context.web3.utils.toChecksumAddress(bookData.unitAddress),
+          fromDate: utils.parseDate(bookData.fromDay),
+          daysAmount: bookData.daysAmount
         })
       };
     }
