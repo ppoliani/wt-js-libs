@@ -29,11 +29,11 @@ const abis = {
 };
 
 const binaries = {
-  WTIndex: WTIndexContract.unlinked_binary,
-  Hotel: HotelContract.unlinked_binary,
-  LifToken: LifTokenContract.unlinked_binary,
-  HotelUnit: UnitContract.unlinked_binary,
-  HotelUnitType: UnitTypeContract.unlinked_binary
+  WTIndex: WTIndexContract.bytecode,
+  Hotel: HotelContract.bytecode,
+  LifToken: LifTokenContract.bytecode,
+  HotelUnit: UnitContract.bytecode,
+  HotelUnitType: UnitTypeContract.bytecode
 }
 
 // --------------------------- Constants / Converters / Type Helpers -------------------------------
@@ -102,7 +102,7 @@ function lifWei2Lif(value, context){
 };
 
 function lif2LifWei(value, context){
-  return context.web3.utils.toWei(value, 'ether');
+  return context.web3.utils.toWei(''+value, 'ether');
 };
 
 function locationToUint(longitude, latitude){

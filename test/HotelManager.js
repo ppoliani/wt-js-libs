@@ -31,8 +31,8 @@ describe('HotelManager', function() {
     ownerAccount = wallet["0"].address;
     daoAccount = wallet["1"].address;
 
-    await utils.fundAccount(fundingSource, ownerAccount, 50, web3);
-    await utils.fundAccount(fundingSource, daoAccount, 50, web3);
+    await utils.fundAccount(fundingSource, ownerAccount, '50', web3);
+    await utils.fundAccount(fundingSource, daoAccount, '50', web3);
   })
 
   beforeEach(async function() {

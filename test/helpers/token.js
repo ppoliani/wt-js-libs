@@ -6,7 +6,7 @@ const provider = new Web3.providers.HttpProvider('http://localhost:8545');
 const web3 = new Web3(provider);
 
 const abi = LifCrowdsale.abi;
-const binary = LifCrowdsale.unlinked_binary;
+const binary = LifCrowdsale.bytecode;
 
 /**
  * Simulates a crowdsale, populates eth.accounts 0 - 4 with token balances
@@ -14,7 +14,7 @@ const binary = LifCrowdsale.unlinked_binary;
  * @return {Instance} LifToken
  */
 async function runTokenGenerationEvent(){
-  const rate = 100000000000;
+  const rate = web3.utils.toBN(100000000000);
   const accounts = await web3.eth.getAccounts();
   const crowdsale = await simulateCrowdsale(rate, [40,30,20,10,0], accounts, 1);
   const tokenAddress = await crowdsale.methods.token().call();
@@ -90,7 +90,7 @@ async function simulateCrowdsale(rate, balances, accounts, weiPerUSD) {
     if (balances[i] > 0){
       const options = {
         to: crowdsale.options.address,
-        value: web3.utils.toWei(balances[i]/rate, 'ether'),
+        value: web3.utils.toWei(web3.utils.toBN(i+1), 'ether'),
         from: accounts[i + 1],
         gas: 600000
       };
@@ -162,4 +162,3 @@ module.exports = {
   runTokenGenerationEvent: runTokenGenerationEvent,
   simulateCrowdsale: simulateCrowdsale
 }
-
