@@ -100,15 +100,4 @@ contract AsyncCall is Ownable {
 
   }
 
-  /**
-    @dev `getPublicCallData` returns the data to be executed of a pending call
-
-    @param msgDataHash The hash of the pending call
-
-    @return bytes The public call data
-  */
-  function getPublicCallData(bytes32 msgDataHash) constant returns (bytes) {
-    return pendingCalls[msgDataHash].callData;
-  }
-
 }
