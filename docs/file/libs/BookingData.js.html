@@ -154,16 +154,48 @@ class BookingData {
 
     if (!hotelsToQuery.length) return [];
 
-    let events;
+    let startedEvents;
+    let finishEvents;
+    let bookEvents;
+    let finished;
+    //TX hashes of CallStarted events indexed by corresponding hashes of CallFinished events
+    let startedMappedByFinished = [];
     for (let address of hotelsToQuery){
       const hotel = utils.getInstance(&apos;Hotel&apos;, address, this.context);
 
-      events = await hotel.getPastEvents(&apos;Book&apos;, {
+      bookEvents = await hotel.getPastEvents(&apos;Book&apos;, {
         fromBlock: fromBlock
       });
 
-      for (let event of events){
-        const guestData = await utils.getGuestData(event.transactionHash, this.context);
+      startedEvents = await hotel.getPastEvents(&apos;CallStarted&apos;, {
+        fromBlock: fromBlock
+      });
+
+      finishEvents = await hotel.getPastEvents(&apos;CallFinish&apos;, {
+        fromBlock: fromBlock
+      })
+
+      // Filter out started events with a corresponding Book event
+      // and map finish events -&gt; started events
+      finished = startedEvents.filter(event =&gt; {
+        let found = finishEvents
+          .findIndex(item =&gt; item.returnValues.dataHash === event.returnValues.dataHash);
+        if(found !== -1) {
+          startedMappedByFinished[finishEvents[found].transactionHash] = event.transactionHash;
+        }
+        return found !== -1;
+      })
+
+      for (let event of bookEvents){
+        let guestData;
+
+        //If guest data can&apos;t be retreived, it means the booking required a
+        //confirmation, so the guestData can be found in the CallStarted tx
+        try {
+          guestData = await utils.getGuestData(event.transactionHash, this.context)
+        } catch(e) {
+          guestData = await utils.getGuestData(startedMappedByFinished[event.transactionHash], this.context)
+        }
 
         bookings.push({
           guestData: guestData,
@@ -194,7 +226,11 @@ class BookingData {
    *     &quot;blockNumber&quot;: 26,
    *     &quot;id&quot;: &quot;log_9b3eb752&quot;,
    *     &quot;from&quot;: &quot;0x522701D427e1C2e039fdC32Db41972A46dFD7755&quot;,
-   *     &quot;dataHash&quot;: &quot;0x4077e0fee8018bb3dd7...ea91b3d7ced260761c73fa&quot;
+   *     &quot;dataHash&quot;: &quot;0x4077e0fee8018bb3dd7...ea91b3d7ced260761c73fa&quot;,
+   *     &quot;hotel&quot;: &apos;0xC9c4DdF85995dCB15377Cf8A262E0e2F19eA7011&apos;,
+   *     &quot;unit&quot;: &apos;0xcf0a860c363d7acd449be319a94d9abfae9dd3eb&apos;,
+   *     &quot;fromDate&quot;: 2020-10-10T07:00:00.000Z,
+   *     &quot;daysAmount&quot;: &apos;5&apos;
    *    }
    *   ]
    */
@@ -234,6 +270,13 @@ class BookingData {
       for(let event of unfinished){
         const guestData = await utils.getGuestData(event.transactionHash, this.context);
 
+        //get calldata and decode it for booking data
+        let publicCallData = await hotel.methods.getPublicCallData(event.returnValues.dataHash).call();
+        let bookData = {};
+        utils.abiDecoder.decodeMethod(publicCallData).params.forEach((param) =&gt; {
+          bookData[param.name] = param.value;
+        });
+
         requests.push({
           guestData: guestData,
           transactionHash: event.transactionHash,
@@ -241,6 +284,10 @@ class BookingData {
           id: event.id,
           from: event.returnValues.from,
           dataHash: event.returnValues.dataHash,
+          hotel: address,
+          unit: this.context.web3.utils.toChecksumAddress(bookData.unitAddress),
+          fromDate: utils.parseDate(bookData.fromDay),
+          daysAmount: bookData.daysAmount
         })
       };
     }
