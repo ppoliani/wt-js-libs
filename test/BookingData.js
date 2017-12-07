@@ -4,7 +4,10 @@ const BookingData = require('../libs/BookingData');
 const utils = require('../libs/utils/index');
 const help = require('./helpers/index');
 
-const assert = require('chai').assert;
+var chai = require('chai');
+chai.use(require('chai-string'));
+const assert = chai.assert;
+
 const _ = require('lodash');
 
 const Web3 = require('web3');
@@ -152,8 +155,8 @@ describe('BookingData', function() {
 
       const bookings = await data.getBookings([hotelAddress, hotelAddressTwo]);
       assert.equal(bookings.length, 2);
-      const augustoBooking = bookings.filter(item => item.from === augusto);
-      const jakubBooking = bookings.filter(item => item.from === jakub);
+      const augustoBooking = bookings.filter(item => item.from === augusto)[0];
+      const jakubBooking = bookings.filter(item => item.from === jakub)[0];
 
       assert.isDefined(augustoBooking);
       assert.isDefined(jakubBooking);
@@ -257,6 +260,11 @@ describe('BookingData', function() {
 
       assert.equal(request.guestData, guestData);
       assert.equal(request.from, user.account);
+
+      assert.equalIgnoreCase(request.hotel, hotelAddress);
+      assert.equalIgnoreCase(request.unit, unitAddress);
+      assert.equal(request.fromDate.toString(), fromDate.toString());
+      assert.equal(request.daysAmount, daysAmount);
     });
 
     it('gets booking requests for two hotels', async() => {
@@ -300,11 +308,21 @@ describe('BookingData', function() {
 
       const requests = await data.getBookingRequests([hotelAddress, hotelAddressTwo]);
       assert.equal(requests.length, 2);
-      const augustoBooking = requests.filter(item => item.from === augusto);
-      const jakubBooking = requests.filter(item => item.from === jakub);
+      const augustoBooking = requests.filter(item => item.from === augusto)[0];
+      const jakubBooking = requests.filter(item => item.from === jakub)[0];
 
       assert.isDefined(augustoBooking);
       assert.isDefined(jakubBooking);
+
+      assert.equalIgnoreCase(augustoBooking.hotel, hotelAddress);
+      assert.equalIgnoreCase(augustoBooking.unit, unitAddress);
+      assert.equal(augustoBooking.fromDate.toString(), fromDate.toString());
+      assert.equal(augustoBooking.daysAmount, daysAmount);
+
+      assert.equalIgnoreCase(jakubBooking.hotel, hotelAddressTwo);
+      assert.equalIgnoreCase(jakubBooking.unit, unitAddressTwo);
+      assert.equal(jakubBooking.fromDate.toString(), fromDate.toString());
+      assert.equal(jakubBooking.daysAmount, daysAmount);
     });
 
     it('gets booking requests for a hotel starting from a specific block number', async() => {
