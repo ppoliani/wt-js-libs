@@ -14,6 +14,7 @@ const {
   addGasMargin,
   jsArrayFromSolidityArray,
   pretty,
+  currencyCodes
 } = require('./misc')
 
 
@@ -235,7 +236,7 @@ async function getHotelInfo(wtHotel, context){
       units[address].unitType = bytes32ToString(unitType);
 
       const code = await instance.methods.currencyCode().call();
-      units[address].currencyCode = isZeroBytes8(code) ? null : context.web3.utils.hexToNumber(code);
+      units[address].currencyCode = isZeroBytes8(code) ? null : currencyCodes.number(context.web3.utils.hexToNumber(code)).code;
 
       const defaultPrice = await instance.methods.defaultPrice().call();
       units[address].defaultPrice = isZeroUint(defaultPrice) ? null : bnToPrice(defaultPrice);

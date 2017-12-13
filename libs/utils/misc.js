@@ -9,6 +9,7 @@ const LifTokenContract = require('../../build/contracts/LifToken.json');
 
 const abiDecoder = require('abi-decoder');
 const moment = require('moment');
+const currencyCodes = require('currency-codes');
 const print = JSON.stringify;
 
 // -------------------------- ABI Decoder / ABI Tables / Binaries ----------------------------------
@@ -234,6 +235,7 @@ module.exports = {
   bytes32ToString: bytes32ToString,
   locationToUint: locationToUint,
   locationFromUint: locationFromUint,
+  currencyCodes: currencyCodes,
 
   // Web3 helpers
   getGuestData: getGuestData,

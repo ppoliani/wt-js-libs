@@ -655,6 +655,9 @@ class HotelManager {
       index
     } = await utils.getHotelAndIndex(hotelAddress, this.context);
 
+    if(!utils.currencyCodes.number(code))
+      throw new Error('Invalid currency code');
+
     code = utils.currencyCodeToHex(code, this.context);
     const unit = utils.getInstance('HotelUnit', unitAddress, this.context);
 

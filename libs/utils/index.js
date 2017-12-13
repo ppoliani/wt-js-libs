@@ -38,5 +38,6 @@ module.exports = {
   getInstance: misc.getInstance,
   fundAccount: misc.fundAccount,
   jsArrayFromSolidityArray: misc.jsArrayFromSolidityArray,
-  pretty: misc.pretty
+  pretty: misc.pretty,
+  currencyCodes: misc.currencyCodes
 }
