@@ -27,6 +27,7 @@ module.exports = {
   lifWei2Lif: misc.lifWei2Lif,
   lif2LifWei: misc.lif2LifWei,
   currencyCodeToHex: misc.currencyCodeToHex,
+  countryCodeToHex: misc.countryCodeToHex,
   bytes32ToString: misc.bytes32ToString,
   priceToUint: misc.priceToUint,
   bnToPrice: misc.bnToPrice,
@@ -39,5 +40,6 @@ module.exports = {
   fundAccount: misc.fundAccount,
   jsArrayFromSolidityArray: misc.jsArrayFromSolidityArray,
   pretty: misc.pretty,
-  currencyCodes: misc.currencyCodes
+  currencyCodes: misc.currencyCodes,
+  countryCodes: misc.countryCodes
 }

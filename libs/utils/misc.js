@@ -10,6 +10,7 @@ const LifTokenContract = require('../../build/contracts/LifToken.json');
 const abiDecoder = require('abi-decoder');
 const moment = require('moment');
 const currencyCodes = require('currency-codes');
+const countryCodes = require('country-code-lookup');
 const print = JSON.stringify;
 
 // -------------------------- ABI Decoder / ABI Tables / Binaries ----------------------------------
@@ -87,6 +88,13 @@ function currencyCodeToHex(code, context){
 
   const hex = context.web3.utils.toHex(code);
   return context.web3.utils.padLeft(hex, 16);
+}
+
+function countryCodeToHex(code, context){
+  if (typeof code !== 'string' || code.length > 2)
+    throw new Error();
+
+  return context.web3.utils.toHex(code);
 }
 
 function priceToUint(price){
@@ -230,12 +238,14 @@ module.exports = {
   lifWei2Lif: lifWei2Lif,
   lif2LifWei: lif2LifWei,
   currencyCodeToHex: currencyCodeToHex,
+  countryCodeToHex: countryCodeToHex,
   priceToUint: priceToUint,
   bnToPrice: bnToPrice,
   bytes32ToString: bytes32ToString,
   locationToUint: locationToUint,
   locationFromUint: locationFromUint,
   currencyCodes: currencyCodes,
+  countryCodes: countryCodes,
 
   // Web3 helpers
   getGuestData: getGuestData,

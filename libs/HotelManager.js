@@ -241,6 +241,11 @@ class HotelManager {
    * @return {Promievent}
    */
   async changeHotelAddress(hotelAddress, lineOne, lineTwo, zipCode, country){
+    country = utils.countryCodes.byIso(country);
+    if(!country)
+      throw new Error('Invalid country code');
+    country = utils.countryCodeToHex(country.iso2, this.context);
+
     const {
       hotel,
       index

@@ -268,7 +268,7 @@ async function getHotelInfo(wtHotel, context){
     lineOne : isZeroString(lineOne) ? null : lineOne,
     lineTwo : isZeroString(lineTwo) ? null : lineTwo,
     zip : isZeroString(zip) ? null : zip,
-    country : isZeroString(country) ? null : country,
+    country : isZeroString(country) ? null : context.web3.utils.hexToString(country),
     created: isZeroUint(created) ? null : parseInt(created),
     timezone : isZeroUint(timezone) ? null : parseInt(timezone),
     latitude : isZeroUint(latitude) ? null : locationFromUint(longitude, latitude).lat,

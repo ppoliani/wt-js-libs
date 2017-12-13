@@ -149,7 +149,7 @@ describe('HotelManager', function() {
       const lineOne = 'Address one';
       const lineTwo = 'Address two';
       const zip = '57575';
-      const country = 'Spain';
+      const country = 'GB';
 
       await lib.changeHotelAddress(address, lineOne, lineTwo, zip, country);
       const hotel = await lib.getHotel(address);
@@ -160,7 +160,19 @@ describe('HotelManager', function() {
       assert.equal(hotel.country, country);
     });
 
-    it('changeHotelLocation: edits the hotel address', async function(){
+    it('changeHotelAddress: throws if country code is invalid', async function(){
+      const lineOne = 'Address one';
+      const lineTwo = 'Address two';
+      const zip = '57575';
+      const country = 'GBR';
+
+      try {
+        await lib.changeHotelAddress(address, lineOne, lineTwo, zip, country);
+        assert(false);
+      } catch(e) { }
+    });
+
+    it('changeHotelLocation: edits the hotel location', async function(){
       const timezone = 15;
       const longitude = 50;
       const latitude = 15;
