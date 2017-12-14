@@ -9,6 +9,7 @@ const LifTokenContract = require('../../build/contracts/LifToken.json');
 
 const abiDecoder = require('abi-decoder');
 const moment = require('moment');
+const request = require('superagent');
 const currencyCodes = require('currency-codes');
 const print = JSON.stringify;
 
@@ -138,6 +139,12 @@ function bytes32ToString(hex){
   return utf8.decode(str);
 };
 
+function splitCamelCaseToString(s) {
+  return s.split(/(?=[A-Z])/).map(function(p) {
+      return p.charAt(0).toUpperCase() + p.slice(1);
+  }).join(' ');
+};
+
 //----------------------------------------- Web3 Helpers -------------------------------------------
 
 /**
@@ -203,6 +210,109 @@ async function jsArrayFromSolidityArray(getAtIndex, length, zeroComparator){
     : arr;
 }
 
+/**
+  Returns all transactions between a hotel manager and WTIndex.
+  Uses the etherscan API (unless running a local blockchain).
+  @param {Address} walletAddress Manager's address
+  @param {Address} indexAddress  WTIndex address
+  @param {Number}  startBlock    Block number to start searching from
+  @param {Object}  web3          Web3 instance
+  @param {String}  networkName   Name of the ethereum network ('api' for main, 'test' for local)
+*/
+async function getDecodedTransactions(walletAddress, indexAddress, startBlock, web3, networkName) {
+  let txs = [];
+  let rawTxs = [];
+
+  //Get manager's hotel addresses
+  let wtIndex = getInstance('WTIndex', indexAddress, {web3: web3});
+  let hotelsAddrs = await wtIndex.methods
+      .getHotelsByManager(walletAddress)
+      .call();
+  let hotelInstances = [];
+
+  //Obtain TX data, either from etherscan or from local chain
+  if(networkName != 'test') {
+    rawTxs = await request.get('http://'+networkName+'.etherscan.io/api')
+      .query({
+        module: 'account',
+        action: 'txlist',
+        address: walletAddress,
+        startBlock: startBlock,
+        endBlock: 'latest',
+        apikey: '6I7UFMJTUXG6XWXN8BBP86DWNHC9MI893F'
+      });
+    rawTxs = rawTxs.body.result;
+    indexAddress = indexAddress.toLowerCase();
+  } else {
+    rawTxs = await getTransactionsByAccount(walletAddress, indexAddress, 0, null, web3);
+  }
+
+  //Decode the TXs
+  const start = async () => {
+    await Promise.all(rawTxs.map(async tx => {
+      if(tx.to == indexAddress) {
+        let txData = {};
+        txData.timeStamp = tx.timeStamp;
+        let method = abiDecoder.decodeMethod(tx.input);
+        if(method.name == 'callHotel') {
+          let hotelIndex = method.params.find(call => call.name === 'index').value;
+          txData.hotel = hotelsAddrs[hotelIndex];
+          method = abiDecoder.decodeMethod(method.params.find(call => call.name === 'data').value);
+          if(method.name == 'callUnitType' || method.name == 'callUnit') {
+            method = abiDecoder.decodeMethod(method.params.find(call => call.name === 'data').value);
+          }
+          if(method.name == 'continueCall') {
+            let msgDataHash = method.params.find(call => call.name === 'msgDataHash').value;
+            if(!hotelInstances[txData.hotel]) {
+              hotelInstances[txData.hotel] = await getInstance('Hotel', txData.hotel, {web3: web3});
+            }
+            let publicCallData = await hotelInstances[txData.hotel].methods.getPublicCallData(msgDataHash).call();
+            method = abiDecoder.decodeMethod(publicCallData);
+          }
+        }
+        if(method.name == 'bookWithLif') {
+          method.name = 'confirmLifBooking';
+          let receipt = await web3.eth.getTransactionReceipt(tx.hash);
+          txData.lifAmount = abiDecoder.decodeLogs(receipt.logs).find(log => log.name == 'Transfer').events.find(e => e.name == 'value').value
+        }
+        if(method.name == 'book') {
+          method.name = 'confirmBooking';
+        }
+        method.name = splitCamelCaseToString(method.name);
+        txData.method = method;
+        txs.push(txData);
+      }
+    }))
+  }
+  await start();
+
+  return txs;
+}
+
+//modified version of https://ethereum.stackexchange.com/questions/2531/common-useful-javascript-snippets-for-geth/3478#3478
+//only used for testing getDecodedTransactions locally
+async function getTransactionsByAccount(myaccount, wtAddresses, startBlockNumber, endBlockNumber, web3) {
+  if (endBlockNumber == null) {
+    endBlockNumber = await web3.eth.getBlockNumber();
+  }
+  if (startBlockNumber == null) {
+    startBlockNumber = endBlockNumber - 1000;
+  }
+  let txs = [];
+  for (var i = startBlockNumber; i <= endBlockNumber; i++) {
+    var block = await web3.eth.getBlock(i, true);
+    if (block != null && block.transactions != null) {
+      block.transactions.forEach( function(e) {
+        if (myaccount == e.from && wtAddresses.includes(e.to)) {
+          e.timeStamp = block.timestamp;
+          txs.push(e);
+        }
+      })
+    }
+  }
+  return txs;
+}
+
 // Debugging helper
 function pretty(msg, obj) {
   console.log(`<------ ${msg} ------>\n${print(obj, null, ' ')}\n`)
@@ -243,6 +353,7 @@ module.exports = {
   getInstance: getInstance,
   fundAccount: fundAccount,
   jsArrayFromSolidityArray: jsArrayFromSolidityArray,
+  getDecodedTransactions: getDecodedTransactions,
 
   // Debugging
   pretty: pretty

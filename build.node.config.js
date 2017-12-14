@@ -34,6 +34,7 @@ module.exports = {
     // new WebpackBundleSizeAnalyzerPlugin('../build-stats.md'),
     new webpack.DefinePlugin({
       VERSION: JSON.stringify(require('./package.json').version)
-    })
+    }),
+    new webpack.DefinePlugin({ "global.GENTLY": false })
   ]
 };
