@@ -13,7 +13,7 @@
     "recompile": "rm -rf build && ./node_modules/.bin/truffle migrate --reset",
     "docs-build": "./node_modules/.bin/esdoc",
     "docs-view": "open ./docs/index.html",
-    "build": "webpack --config build.web.config.js && webpack --config build.node.config.js",
+    "build": "webpack",
     "update-submodules": "git submodule update --recursive && npm run postinstall",
     "pull-submodules": "git submodule foreach git pull origin master && npm run postinstall"
   },
